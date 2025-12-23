@@ -39,6 +39,10 @@ export class DatabaseFunctionService {
         // Construir la query
         const query = `SELECT * FROM ${functionName}(${placeholders})`;
 
+        // Debug: Log the query and params
+        // console.log('🔍 SQL Query:', query);
+        // console.log('🔍 Parameters:', params);
+
         // Ejecutar la query con los parámetros
         const result = await this.dataSource.query(query, params);
 

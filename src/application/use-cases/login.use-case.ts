@@ -35,10 +35,17 @@ export class LoginUseCase {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
+        // Fix: PHP bcrypt uses $2y$, Node.js bcrypt uses $2a$ or $2b$
+        // They are functionally identical, so we can safely convert
+        let passwordHash = user.contrasena;
+        if (passwordHash.startsWith('$2y$')) {
+            passwordHash = passwordHash.replace(/^\$2y\$/, '$2a$');
+        }
+
         // Verify password
         const isPasswordValid = await bcrypt.compare(
             loginDto.contrasena,
-            user.contrasena,
+            passwordHash,
         );
 
         if (!isPasswordValid) {

@@ -11,15 +11,15 @@ export class AuthRepository implements IAuthRepository {
 
     async register(data: RegisterUserData): Promise<AuthUser> {
         // Call authCrearUsuario function
-        // SELECT * FROM authCrearUsuario(nombre, correo, contrasena, estado, id)
+        // SELECT * FROM authCrearUsuario(p_id, p_nombre, p_correo, p_contrasena, p_estado)
         const result = await this.databaseFunctionService.callFunctionSingle<any>(
             'authCrearUsuario',
             [
-                data.nombre,
-                data.correo,
-                data.contrasena,
-                data.estado ?? 1,
-                data.id ?? null,
+                data.id ?? null,        // p_id
+                data.nombre,            // p_nombre
+                data.correo,            // p_correo
+                data.contrasena,        // p_contrasena
+                data.estado ?? 1,       // p_estado
             ],
         );
 
