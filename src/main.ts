@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
+import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,9 @@ async function bootstrap() {
       transform: true, // Transforma los payloads a instancias de DTO
     }),
   );
+
+  // Configurar interceptor de logging
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Configurar filtro global de excepciones
   app.useGlobalFilters(new GlobalExceptionFilter());
@@ -34,4 +38,5 @@ async function bootstrap() {
   console.log(`📊 Database: ${process.env.DB_HOST}`);
 }
 bootstrap();
+
 
