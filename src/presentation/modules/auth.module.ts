@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from '../controllers/auth.controller';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
@@ -13,10 +13,10 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
         DatabaseModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
+            useFactory: async (configService: ConfigService): Promise<JwtModuleOptions> => ({
                 secret: configService.get<string>('JWT_SECRET') || 'default-secret-key-change-in-production',
                 signOptions: {
-                    expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d',
+                    expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '1d') as any,
                 },
             }),
             inject: [ConfigService],
