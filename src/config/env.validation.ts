@@ -38,6 +38,16 @@ export class EnvironmentVariables {
   @IsBoolean()
   @Transform(({ value }) => value === 'true')
   DB_LOGGING: boolean;
+
+  // Autodesk ACC Configuration
+  @IsString()
+  AUTODESK_CLIENT_ID: string;
+
+  @IsString()
+  AUTODESK_CLIENT_SECRET: string;
+
+  @IsString()
+  AUTODESK_CALLBACK_URL: string;
 }
 
 export function validate(config: Record<string, unknown>) {

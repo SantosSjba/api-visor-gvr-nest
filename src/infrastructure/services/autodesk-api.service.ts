@@ -1,0 +1,187 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HttpClientService } from '../../shared/services/http-client.service';
+
+
+export interface Token2LeggedResponse {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    expires_at: Date;
+}
+
+export interface Token3LeggedResponse {
+    access_token: string;
+    refresh_token?: string;
+    token_type: string;
+    expires_in: number;
+    expires_at: Date;
+}
+
+@Injectable()
+export class AutodeskApiService {
+    private readonly clientId: string;
+    private readonly clientSecret: string;
+    private readonly callbackUrl: string;
+    private readonly authUrl = 'https://developer.api.autodesk.com/authentication/v2/token';
+    private readonly authorizeUrl = 'https://developer.api.autodesk.com/authentication/v2/authorize';
+
+    constructor(
+        private readonly httpClient: HttpClientService,
+        private readonly configService: ConfigService,
+    ) {
+        this.clientId = this.configService.get<string>('AUTODESK_CLIENT_ID') || '';
+        this.clientSecret = this.configService.get<string>('AUTODESK_CLIENT_SECRET') || '';
+        this.callbackUrl = this.configService.get<string>('AUTODESK_CALLBACK_URL') || '';
+    }
+
+    /**
+     * Obtiene un token 2-legged (app-only) de Autodesk
+     */
+    async obtenerToken2Legged(scopes: string[]): Promise<Token2LeggedResponse> {
+        try {
+            const scopesString = scopes.join(' ');
+
+            // Encode credentials for Basic Auth
+            const credentials = `${this.clientId}:${this.clientSecret}`;
+            const encodedCredentials = Buffer.from(credentials).toString('base64');
+
+            const response = await this.httpClient.post<any>(
+                this.authUrl,
+                new URLSearchParams({
+                    grant_type: 'client_credentials',
+                    scope: scopesString,
+                }).toString(),
+                {
+                    headers: {
+                        'Authorization': `Basic ${encodedCredentials}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                },
+            );
+
+            const expiresAt = new Date();
+            expiresAt.setSeconds(expiresAt.getSeconds() + response.data.expires_in);
+
+            return {
+                access_token: response.data.access_token,
+                token_type: response.data.token_type,
+                expires_in: response.data.expires_in,
+                expires_at: expiresAt,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener token 2-legged: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Genera la URL de autorización para 3-legged OAuth
+     */
+    generarUrlAutorizacion(scopes: string[], state: string): string {
+        const scopesString = scopes.join(' ');
+
+        const params = new URLSearchParams({
+            response_type: 'code',
+            client_id: this.clientId,
+            redirect_uri: this.callbackUrl,
+            scope: scopesString,
+            state: state,
+        });
+
+        return `${this.authorizeUrl}?${params.toString()}`;
+    }
+
+    /**
+     * Intercambia el código de autorización por un token 3-legged
+     */
+    async intercambiarCodigoPorToken(code: string): Promise<Token3LeggedResponse> {
+        try {
+            // Encode credentials for Basic Auth
+            const credentials = `${this.clientId}:${this.clientSecret}`;
+            const encodedCredentials = Buffer.from(credentials).toString('base64');
+
+            const response = await this.httpClient.post<any>(
+                this.authUrl,
+                new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    code: code,
+                    redirect_uri: this.callbackUrl,
+                }).toString(),
+                {
+                    headers: {
+                        'Authorization': `Basic ${encodedCredentials}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                },
+            );
+
+            const expiresAt = new Date();
+            expiresAt.setSeconds(expiresAt.getSeconds() + response.data.expires_in);
+
+            return {
+                access_token: response.data.access_token,
+                refresh_token: response.data.refresh_token,
+                token_type: response.data.token_type,
+                expires_in: response.data.expires_in,
+                expires_at: expiresAt,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al intercambiar código por token: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Refresca un token 3-legged usando el refresh token
+     */
+    async refrescarToken(refreshToken: string): Promise<Token3LeggedResponse> {
+        try {
+            // Encode credentials for Basic Auth
+            const credentials = `${this.clientId}:${this.clientSecret}`;
+            const encodedCredentials = Buffer.from(credentials).toString('base64');
+
+            const response = await this.httpClient.post<any>(
+                this.authUrl,
+                new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: refreshToken,
+                }).toString(),
+                {
+                    headers: {
+                        'Authorization': `Basic ${encodedCredentials}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                },
+            );
+
+            const expiresAt = new Date();
+            expiresAt.setSeconds(expiresAt.getSeconds() + response.data.expires_in);
+
+            return {
+                access_token: response.data.access_token,
+                refresh_token: response.data.refresh_token || refreshToken,
+                token_type: response.data.token_type,
+                expires_in: response.data.expires_in,
+                expires_at: expiresAt,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al refrescar token: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Valida si un token está expirado
+     */
+    esTokenExpirado(expiraEn: Date | string): boolean {
+        const now = new Date();
+        const expirationDate = new Date(expiraEn);
+        // Consider expired if less than 5 minutes remaining
+        const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+        return expirationDate.getTime() - now.getTime() < bufferTime;
+    }
+}
