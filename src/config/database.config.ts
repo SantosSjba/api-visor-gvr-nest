@@ -16,4 +16,13 @@ export const getDatabaseConfig = (
     ssl: {
         rejectUnauthorized: false, // Necesario para Supabase
     },
+    extra: {
+        // Configuración adicional para mejorar la conexión
+        connectionTimeoutMillis: 10000, // 10 segundos de timeout
+        // Forzar IPv4 para evitar problemas de timeout con IPv6
+        family: 4,
+    },
+    // Configuración de reintentos
+    retryAttempts: 5,
+    retryDelay: 3000,
 });
