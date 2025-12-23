@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,9 @@ async function bootstrap() {
       transform: true, // Transforma los payloads a instancias de DTO
     }),
   );
+
+  // Configurar filtro global de excepciones
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Configurar CORS
   app.enableCors({
