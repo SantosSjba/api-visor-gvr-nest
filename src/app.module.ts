@@ -11,6 +11,7 @@ import { TrabajadorModule } from './presentation/modules/trabajador.module';
 import { ProyectoModule } from './presentation/modules/proyecto.module';
 import { RolModule } from './presentation/modules/rol.module';
 import { PermisoModule } from './presentation/modules/permiso.module';
+import { MenuGestionModule } from './presentation/modules/menu-gestion.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PermisoModule } from './presentation/modules/permiso.module';
     ProyectoModule,
     RolModule,
     PermisoModule,
+    MenuGestionModule,
   ],
 })
 export class AppModule { }
