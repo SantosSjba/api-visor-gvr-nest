@@ -111,4 +111,29 @@ export class AuthRepository implements IAuthRepository {
 
         return perfil;
     }
+
+    async actualizarCredenciales(
+        idUsuario: number,
+        nuevoCorreo: string | null,
+        nuevaContrasena: string | null,
+        idUsuarioModificacion: number,
+    ): Promise<any> {
+        // Call authActualizarCredencialesUsuario function
+        // SELECT * FROM authActualizarCredencialesUsuario(p_idUsuario, p_nuevoCorreo, p_nuevaContrasena, p_idUsuarioModificacion)
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'authActualizarCredencialesUsuario',
+            [
+                idUsuario,
+                nuevoCorreo,
+                nuevaContrasena,
+                idUsuarioModificacion,
+            ],
+        );
+
+        if (!result) {
+            throw new Error('No se pudieron actualizar las credenciales');
+        }
+
+        return result;
+    }
 }

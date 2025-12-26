@@ -12,6 +12,12 @@ export interface IAuthRepository {
     register(data: RegisterUserData): Promise<AuthUser>;
     login(correo: string): Promise<AuthUser | null>;
     obtenerPerfilUsuario(idUsuario: number): Promise<any>;
+    actualizarCredenciales(
+        idUsuario: number,
+        nuevoCorreo: string | null,
+        nuevaContrasena: string | null,
+        idUsuarioModificacion: number
+    ): Promise<any>;
 }
 
 export const AUTH_REPOSITORY = 'AUTH_REPOSITORY';

@@ -4,6 +4,8 @@ import { validate } from './config/env.validation';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { AuthModule } from './presentation/modules/auth.module';
 import { AccModule } from './presentation/modules/acc.module';
+import { UserModule } from './presentation/modules/user.module';
+import { GeneralModule } from './presentation/modules/general.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { AccModule } from './presentation/modules/acc.module';
     // Módulos de funcionalidad
     AuthModule,
     AccModule,
+    UserModule,
+    GeneralModule,
   ],
 })
 export class AppModule { }
