@@ -9,6 +9,7 @@ import { GeneralModule } from './presentation/modules/general.module';
 import { EmpresaModule } from './presentation/modules/empresa.module';
 import { TrabajadorModule } from './presentation/modules/trabajador.module';
 import { ProyectoModule } from './presentation/modules/proyecto.module';
+import { RolModule } from './presentation/modules/rol.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ProyectoModule } from './presentation/modules/proyecto.module';
     EmpresaModule,
     TrabajadorModule,
     ProyectoModule,
+    RolModule,
   ],
 })
 export class AppModule { }
