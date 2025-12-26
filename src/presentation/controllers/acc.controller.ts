@@ -104,12 +104,25 @@ export class AccController {
         // User is automatically attached by JwtAuthGuard
         const user = (request as any).user;
 
-        const resultado = await this.refrescarToken3LeggedUseCase.execute(user.sub);
+        try {
+            const resultado = await this.refrescarToken3LeggedUseCase.execute(user.sub);
 
-        return ApiResponseDto.success(
-            resultado,
-            'Token refrescado exitosamente',
-        );
+            return ApiResponseDto.success(
+                resultado,
+                'Token refrescado exitosamente',
+            );
+        } catch (error: any) {
+            // If refresh token is expired, return error with re-authentication guidance
+            if (error.message && error.message.includes('Refresh token expirado')) {
+                return ApiResponseDto.error(
+                    error.message,
+                    HttpStatus.UNAUTHORIZED,
+                );
+            }
+
+            // Re-throw other errors to be handled by global exception filter
+            throw error;
+        }
     }
 
     /**

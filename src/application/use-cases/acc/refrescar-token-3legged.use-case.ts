@@ -30,21 +30,33 @@ export class RefrescarToken3LeggedUseCase {
             throw new BadRequestException('No hay refresh token disponible');
         }
 
-        // Refresh the token
-        const nuevoToken = await this.autodeskApiService.refrescarToken(tokenActual.tokenRefresco);
+        try {
+            // Refresh the token
+            const nuevoToken = await this.autodeskApiService.refrescarToken(tokenActual.tokenRefresco);
 
-        // Update token in database
-        const tokenActualizado = await this.accRepository.actualizarToken3Legged(
-            tokenActual.id!,
-            nuevoToken.access_token,
-            nuevoToken.refresh_token || tokenActual.tokenRefresco,
-            nuevoToken.expires_at,
-        );
+            // Update token in database
+            const tokenActualizado = await this.accRepository.actualizarToken3Legged(
+                tokenActual.id!,
+                nuevoToken.access_token,
+                nuevoToken.refresh_token || tokenActual.tokenRefresco,
+                nuevoToken.expires_at,
+            );
 
-        return {
-            access_token: tokenActualizado.tokenAcceso,
-            expires_at: tokenActualizado.expiraEn,
-            token_type: tokenActualizado.tipoToken,
-        };
+            return {
+                access_token: tokenActualizado.tokenAcceso,
+                expires_at: tokenActualizado.expiraEn,
+                token_type: tokenActualizado.tipoToken,
+            };
+        } catch (error: any) {
+            // Check if the error is due to expired refresh token
+            if (error.message && error.message.includes('REFRESH_TOKEN_EXPIRED')) {
+                throw new BadRequestException(
+                    'Refresh token expirado o inválido. Por favor, vuelva a autenticarse mediante el flujo OAuth.',
+                );
+            }
+
+            // Re-throw other errors
+            throw error;
+        }
     }
 }

@@ -66,4 +66,49 @@ export class AuthRepository implements IAuthRepository {
             menus: result.menus || [],
         });
     }
+
+    async obtenerPerfilUsuario(idUsuario: number): Promise<any> {
+        // Call authobtenerperfilusuario function
+        // SELECT * FROM authobtenerperfilusuario(p_id_usuario)
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'authobtenerperfilusuario',
+            [idUsuario],
+        );
+
+        if (!result) {
+            return null;
+        }
+
+        // Decodificar campos JSON si son strings
+        const perfil = { ...result };
+
+        // Decodificar trabajador (JSON string a objeto/array)
+        if (perfil.trabajador && typeof perfil.trabajador === 'string') {
+            try {
+                perfil.trabajador = JSON.parse(perfil.trabajador);
+            } catch (e) {
+                // Si falla el parse, dejar como está
+            }
+        }
+
+        // Decodificar roles (JSON string a array)
+        if (perfil.roles && typeof perfil.roles === 'string') {
+            try {
+                perfil.roles = JSON.parse(perfil.roles);
+            } catch (e) {
+                perfil.roles = [];
+            }
+        }
+
+        // Decodificar sesionactiva (JSON string a objeto/array)
+        if (perfil.sesionactiva && typeof perfil.sesionactiva === 'string') {
+            try {
+                perfil.sesionactiva = JSON.parse(perfil.sesionactiva);
+            } catch (e) {
+                // Si falla el parse, dejar como está
+            }
+        }
+
+        return perfil;
+    }
 }

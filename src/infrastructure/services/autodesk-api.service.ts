@@ -168,8 +168,20 @@ export class AutodeskApiService {
                 expires_at: expiresAt,
             };
         } catch (error: any) {
+            // Check if the error is due to invalid or expired refresh token
+            const errorData = error.response?.data;
+            const statusCode = error.response?.status;
+
+            if (statusCode === 400 && errorData?.error === 'invalid_grant') {
+                // Refresh token is invalid or expired
+                throw new Error(
+                    `REFRESH_TOKEN_EXPIRED: ${errorData.error_description || 'El refresh token es inválido o ha expirado'}`,
+                );
+            }
+
+            // Other errors
             throw new Error(
-                `Error al refrescar token: ${error.response?.data?.message || error.message}`,
+                `Error al refrescar token: ${errorData?.error_description || errorData?.message || error.message}`,
             );
         }
     }
