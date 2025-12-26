@@ -10,6 +10,7 @@ import { EmpresaModule } from './presentation/modules/empresa.module';
 import { TrabajadorModule } from './presentation/modules/trabajador.module';
 import { ProyectoModule } from './presentation/modules/proyecto.module';
 import { RolModule } from './presentation/modules/rol.module';
+import { PermisoModule } from './presentation/modules/permiso.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { RolModule } from './presentation/modules/rol.module';
     TrabajadorModule,
     ProyectoModule,
     RolModule,
+    PermisoModule,
   ],
 })
 export class AppModule { }
