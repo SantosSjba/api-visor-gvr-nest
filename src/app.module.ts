@@ -8,6 +8,7 @@ import { UserModule } from './presentation/modules/user.module';
 import { GeneralModule } from './presentation/modules/general.module';
 import { EmpresaModule } from './presentation/modules/empresa.module';
 import { TrabajadorModule } from './presentation/modules/trabajador.module';
+import { ProyectoModule } from './presentation/modules/proyecto.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TrabajadorModule } from './presentation/modules/trabajador.module';
     GeneralModule,
     EmpresaModule,
     TrabajadorModule,
+    ProyectoModule,
   ],
 })
 export class AppModule { }
