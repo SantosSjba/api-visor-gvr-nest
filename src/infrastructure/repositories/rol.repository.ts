@@ -108,7 +108,7 @@ export class RolRepository implements IRolRepository {
 
     async listarPermisosDisponibles(idRol: number): Promise<any[]> {
         const result = await this.databaseFunctionService.callFunction<any>(
-            'authListarPermisosDisponibles',
+            'authlistarpermisos_disponibles',
             [idRol],
         );
 
@@ -153,7 +153,7 @@ export class RolRepository implements IRolRepository {
 
     async obtenerDetalleRol(idRol: number): Promise<any> {
         const result = await this.databaseFunctionService.callFunctionSingle<any>(
-            'authObtenerDetalleRol',
+            'authobtenerdetalle_rol',
             [idRol],
         );
 
