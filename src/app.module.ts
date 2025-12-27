@@ -27,6 +27,9 @@ import { AccAccountUsersModule } from './presentation/modules/acc-account-users.
 import { AccProjectUsersModule } from './presentation/modules/acc-project-users.module';
 import { BusinessUnitsModule } from './presentation/modules/business-units.module';
 import { Bim360ProjectsModule } from './presentation/modules/bim360-projects.module';
+import { DataManagementBucketsModule } from './presentation/modules/data-management-buckets.module';
+import { AuditoriaModule } from './presentation/modules/auditoria.module';
+import { AccRecursosModule } from './presentation/modules/acc-recursos.module';
 
 @Module({
   imports: [
@@ -50,6 +53,9 @@ import { Bim360ProjectsModule } from './presentation/modules/bim360-projects.mod
     AccProjectUsersModule,
     BusinessUnitsModule,
     Bim360ProjectsModule,
+    DataManagementBucketsModule,
+    AuditoriaModule,
+    AccRecursosModule,
     UserModule,
     GeneralModule,
     EmpresaModule,

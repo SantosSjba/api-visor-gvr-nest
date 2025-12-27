@@ -4803,6 +4803,170 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== DATA MANAGEMENT OSS BUCKETS API ====================
+
+    /**
+     * Obtiene los buckets de la aplicación con paginación
+     */
+    async obtenerBuckets(accessToken: string, region?: string, limit?: number, startAt?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/oss/v2/buckets`;
+
+            const queryParams: Record<string, string> = {};
+            if (region) queryParams.region = region;
+            if (limit) queryParams.limit = limit.toString();
+            if (startAt) queryParams.startAt = startAt;
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data.items || [],
+                next: response.data.next || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener buckets: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los detalles de un bucket específico
+     */
+    async obtenerDetallesBucket(accessToken: string, bucketKey: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!bucketKey) {
+                throw new Error('El bucket key es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/details`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener detalles del bucket: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un nuevo bucket
+     */
+    async crearBucket(accessToken: string, bucketKey: string, policyKey: string = 'transient', region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!bucketKey) {
+                throw new Error('El bucket key es requerido');
+            }
+
+            const validPolicies = ['transient', 'temporary', 'persistent'];
+            if (!validPolicies.includes(policyKey)) {
+                throw new Error('Policy key inválido. Valores permitidos: transient, temporary, persistent');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets`;
+
+            const payload = {
+                bucketKey,
+                policyKey,
+            };
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['region'] = region;
+            }
+
+            const response = await this.httpClient.post<any>(url, payload, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear bucket: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Elimina un bucket
+     */
+    async eliminarBucket(accessToken: string, bucketKey: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!bucketKey) {
+                throw new Error('El bucket key es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['region'] = region;
+            }
+
+            await this.httpClient.delete<any>(url, { headers });
+
+            return {
+                message: 'Bucket eliminado exitosamente',
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al eliminar bucket: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 
 
