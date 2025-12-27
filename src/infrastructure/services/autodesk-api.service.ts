@@ -3936,6 +3936,520 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== PROJECT USERS API ====================
+
+    /**
+     * Obtiene usuarios de un proyecto con filtros avanzados
+     */
+    async obtenerUsuariosProyecto(accessToken: string, projectId: string, filters: Record<string, any> = {}, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener usuarios del proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene un usuario específico de un proyecto
+     */
+    async obtenerUsuarioProyectoPorId(accessToken: string, projectId: string, projectUserId: string, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!projectUserId) {
+                throw new Error('El ID del usuario del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users/${encodeURIComponent(projectUserId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener usuario del proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca usuarios en un proyecto
+     */
+    async buscarUsuariosProyecto(accessToken: string, projectId: string, filters: Record<string, any> = {}, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users/search`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar usuarios en el proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Agrega un usuario a un proyecto
+     */
+    async agregarUsuarioProyecto(accessToken: string, projectId: string, userData: Record<string, any>, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!userData.email) {
+                throw new Error('El email es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.post<any>(url, userData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al agregar usuario al proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Importa múltiples usuarios a un proyecto
+     */
+    async importarUsuariosProyecto(accessToken: string, projectId: string, users: any[], region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!users || users.length === 0) {
+                throw new Error('Debe proporcionar al menos un usuario');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users:import`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.post<any>(url, { users }, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al importar usuarios al proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un usuario en un proyecto
+     */
+    async actualizarUsuarioProyecto(accessToken: string, projectId: string, projectUserId: string, userData: Record<string, any>, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!projectUserId) {
+                throw new Error('El ID del usuario del proyecto es requerido');
+            }
+            if (!userData || Object.keys(userData).length === 0) {
+                throw new Error('Debe proporcionar datos para actualizar');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users/${encodeURIComponent(projectUserId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.patch<any>(url, userData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar usuario del proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Elimina un usuario de un proyecto
+     */
+    async eliminarUsuarioProyecto(accessToken: string, projectId: string, projectUserId: string, region?: string, userId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!projectUserId) {
+                throw new Error('El ID del usuario del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}/users/${encodeURIComponent(projectUserId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            await this.httpClient.delete<any>(url, { headers });
+
+            return {
+                data: null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al eliminar usuario del proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    // ==================== BUSINESS UNITS API ====================
+
+    /**
+     * Obtiene todas las business units de una cuenta
+     */
+    async obtenerBusinessUnits(accessToken: string, accountId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/business_units_structure`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data.business_units || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener business units: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene una business unit específica por ID
+     */
+    async obtenerBusinessUnitPorId(accessToken: string, accountId: string, businessUnitId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!businessUnitId) {
+                throw new Error('El ID de la business unit es requerido');
+            }
+
+            const resultado = await this.obtenerBusinessUnits(accessToken, accountId, region);
+            const businessUnits = resultado.data;
+
+            const businessUnit = businessUnits.find((unit: any) => unit.id === businessUnitId);
+
+            if (!businessUnit) {
+                throw new Error(`Business unit no encontrada con ID: ${businessUnitId}`);
+            }
+
+            return {
+                data: businessUnit,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener business unit: ${error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene business units hijas de una business unit padre
+     */
+    async obtenerBusinessUnitsHijas(accessToken: string, accountId: string, parentId?: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const resultado = await this.obtenerBusinessUnits(accessToken, accountId, region);
+            const businessUnits = resultado.data;
+
+            const hijas = businessUnits.filter((unit: any) => unit.parent_id === parentId);
+
+            return {
+                data: hijas,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener business units hijas: ${error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el árbol jerárquico de business units
+     */
+    async obtenerArbolBusinessUnits(accessToken: string, accountId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const resultado = await this.obtenerBusinessUnits(accessToken, accountId, region);
+            const businessUnits = resultado.data;
+
+            const unitsMap: Record<string, any> = {};
+            businessUnits.forEach((unit: any) => {
+                unitsMap[unit.id] = { ...unit, children: [] };
+            });
+
+            const tree: any[] = [];
+            businessUnits.forEach((unit: any) => {
+                if (unit.parent_id === null || unit.parent_id === undefined) {
+                    tree.push(unitsMap[unit.id]);
+                } else {
+                    if (unitsMap[unit.parent_id]) {
+                        unitsMap[unit.parent_id].children.push(unitsMap[unit.id]);
+                    }
+                }
+            });
+
+            return {
+                data: tree,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener árbol de business units: ${error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca business units por nombre
+     */
+    async buscarBusinessUnits(accessToken: string, accountId: string, searchTerm: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!searchTerm) {
+                throw new Error('El término de búsqueda es requerido');
+            }
+
+            const resultado = await this.obtenerBusinessUnits(accessToken, accountId, region);
+            const businessUnits = resultado.data;
+
+            const searchTermLower = searchTerm.toLowerCase();
+            const resultados = businessUnits.filter((unit: any) => {
+                const nameLower = (unit.name || '').toLowerCase();
+                const descriptionLower = (unit.description || '').toLowerCase();
+                return nameLower.includes(searchTermLower) || descriptionLower.includes(searchTermLower);
+            });
+
+            return {
+                data: resultados,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar business units: ${error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea o actualiza business units
+     */
+    async crearOActualizarBusinessUnits(accessToken: string, accountId: string, businessUnits: any[], region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!businessUnits || businessUnits.length === 0) {
+                throw new Error('Debe proporcionar al menos una business unit');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/business_units_structure`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.put<any>(url, { business_units: businessUnits }, { headers });
+
+            return {
+                data: response.data.business_units || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear/actualizar business units: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
 }
 
 

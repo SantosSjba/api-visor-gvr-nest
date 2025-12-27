@@ -24,6 +24,8 @@ import { IssuesBim360Module } from './presentation/modules/issues-bim360.module'
 import { AccResourcesModule } from './presentation/modules/acc-resources.module';
 import { CompaniesModule } from './presentation/modules/companies.module';
 import { AccAccountUsersModule } from './presentation/modules/acc-account-users.module';
+import { AccProjectUsersModule } from './presentation/modules/acc-project-users.module';
+import { BusinessUnitsModule } from './presentation/modules/business-units.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { AccAccountUsersModule } from './presentation/modules/acc-account-users.
     AccResourcesModule,
     CompaniesModule,
     AccAccountUsersModule,
+    AccProjectUsersModule,
+    BusinessUnitsModule,
     UserModule,
     GeneralModule,
     EmpresaModule,
