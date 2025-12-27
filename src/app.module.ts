@@ -17,6 +17,7 @@ import { DataManagementModule } from './presentation/modules/data-management.mod
 import { DataManagementFoldersModule } from './presentation/modules/data-management-folders.module';
 import { DataManagementProjectsModule } from './presentation/modules/data-management-projects.module';
 import { DataManagementItemsModule } from './presentation/modules/data-management-items.module';
+import { DataManagementVersionsModule } from './presentation/modules/data-management-versions.module';
 import { AccViewerModule } from './presentation/modules/acc-viewer.module';
 import { AccIssuesModule } from './presentation/modules/acc-issues.module';
 import { IssuesBim360Module } from './presentation/modules/issues-bim360.module';
@@ -51,6 +52,7 @@ import { AccResourcesModule } from './presentation/modules/acc-resources.module'
     DataManagementFoldersModule,
     DataManagementProjectsModule,
     DataManagementItemsModule,
+    DataManagementVersionsModule,
     AccViewerModule,
   ],
 })

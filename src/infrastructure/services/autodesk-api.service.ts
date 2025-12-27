@@ -2816,6 +2816,390 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== DATA MANAGEMENT VERSIONS ====================
+
+    /**
+     * Obtiene una versión específica por ID
+     */
+    async obtenerVersionPorId(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los formatos de descarga disponibles para una versión
+     */
+    async obtenerFormatosDescarga(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/downloadFormats`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener formatos de descarga: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene información de descarga para una versión
+     */
+    async obtenerDescargas(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/downloads`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener descargas: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el item asociado a una versión
+     */
+    async obtenerItemVersion(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/item`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener item de versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las referencias (refs) de una versión
+     */
+    async obtenerReferenciasVersion(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener referencias de versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de links de una versión
+     */
+    async obtenerRelacionesLinksVersion(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/relationships/links`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de links de versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de refs de una versión
+     */
+    async obtenerRelacionesRefsVersion(accessToken: string, projectId: string, versionId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/relationships/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de refs de versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una nueva versión
+     */
+    async crearVersion(accessToken: string, projectId: string, versionData: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionData) {
+                throw new Error('Los datos de la versión son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: versionData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una referencia en una versión
+     */
+    async crearReferenciaVersion(accessToken: string, projectId: string, versionId: string, refData: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+            if (!refData) {
+                throw new Error('Los datos de la referencia son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}/relationships/refs`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: refData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear referencia en versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza una versión
+     */
+    async actualizarVersion(accessToken: string, projectId: string, versionId: string, updateData: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!versionId) {
+                throw new Error('El ID de la versión es requerido');
+            }
+            if (!updateData) {
+                throw new Error('Los datos de actualización son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions/${encodeURIComponent(versionId)}`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: updateData,
+            };
+
+            const response = await this.httpClient.patch<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar versión: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 
 
