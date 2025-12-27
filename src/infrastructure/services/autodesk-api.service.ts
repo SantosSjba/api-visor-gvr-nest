@@ -724,4 +724,652 @@ export class AutodeskApiService {
 
         return new URLSearchParams(params).toString();
     }
+
+    // ==================== DATA MANAGEMENT FOLDERS API ====================
+
+    /**
+     * Obtiene una carpeta específica por ID
+     */
+    async obtenerCarpetaPorId(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el contenido de una carpeta (subcarpetas y archivos)
+     */
+    async obtenerContenidoCarpeta(accessToken: string, projectId: string, folderId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/contents`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                included: response.data.included || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener contenido de carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca en el contenido de una carpeta por nombre u otros criterios
+     */
+    async buscarEnContenidoCarpeta(
+        accessToken: string,
+        projectId: string,
+        folderId: string,
+        searchName?: string,
+        filterType?: string,
+        extensionType?: string,
+        additionalFilters: Record<string, any> = {}
+    ): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/contents`;
+
+            const params: Record<string, string> = { ...additionalFilters };
+
+            if (searchName) {
+                params['filter[displayName]'] = searchName;
+            }
+            if (filterType) {
+                params['filter[type]'] = filterType;
+            }
+            if (extensionType) {
+                params['filter[extension.type]'] = extensionType;
+            }
+
+            if (Object.keys(params).length > 0) {
+                url += '?' + new URLSearchParams(params).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar en contenido de carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene la carpeta padre de una carpeta
+     */
+    async obtenerCarpetaPadre(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/parent`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener carpeta padre: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las referencias (refs) de una carpeta
+     */
+    async obtenerReferenciasCarpeta(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener referencias: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de links de una carpeta
+     */
+    async obtenerRelacionesLinksCarpeta(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/relationships/links`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de links: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de refs de una carpeta
+     */
+    async obtenerRelacionesRefsCarpeta(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/relationships/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de refs: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca dentro de una carpeta
+     */
+    async buscarEnCarpeta(accessToken: string, projectId: string, folderId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/search`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar en carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una nueva carpeta
+     */
+    async crearCarpeta(accessToken: string, projectId: string, folderData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderData) {
+                throw new Error('Token, projectId y folderData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: folderData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una subcarpeta dentro de una carpeta padre
+     */
+    async crearSubcarpeta(
+        accessToken: string,
+        projectId: string,
+        parentFolderId: string,
+        folderName: string,
+        folderType?: string
+    ): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !parentFolderId || !folderName) {
+                throw new Error('Token, projectId, parentFolderId y folderName son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders`;
+
+            const folderData: any = {
+                type: 'folders',
+                attributes: {
+                    name: folderName,
+                },
+                relationships: {
+                    parent: {
+                        data: {
+                            type: 'folders',
+                            id: parentFolderId,
+                        },
+                    },
+                },
+            };
+
+            if (folderType) {
+                folderData.attributes.extension = {
+                    type: folderType,
+                    version: '1.0',
+                };
+            }
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: folderData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear subcarpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una referencia en una carpeta
+     */
+    async crearReferenciaCarpeta(accessToken: string, projectId: string, folderId: string, refData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId || !refData) {
+                throw new Error('Token, projectId, folderId y refData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/relationships/refs`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: refData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear referencia: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza una carpeta
+     */
+    async actualizarCarpeta(accessToken: string, projectId: string, folderId: string, updateData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId || !updateData) {
+                throw new Error('Token, projectId, folderId y updateData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: updateData,
+            };
+
+            const response = await this.httpClient.patch<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Elimina una carpeta (marca como oculta)
+     */
+    async eliminarCarpeta(accessToken: string, projectId: string, folderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId) {
+                throw new Error('Token, projectId y folderId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: {
+                    type: 'folders',
+                    id: folderId,
+                    attributes: {
+                        hidden: true,
+                    },
+                },
+            };
+
+            const response = await this.httpClient.patch<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+                hiddenAt: new Date().toISOString(),
+                wasAlreadyHidden: response.data.data?.attributes?.hidden === true,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al eliminar carpeta: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    // ==================== DATA MANAGEMENT PROJECTS API ====================
+
+    /**
+     * Obtiene el hub de un proyecto específico
+     */
+    async obtenerHubDeProyecto(accessToken: string, hubId: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken || !hubId || !projectId) {
+                throw new Error('Token, hubId y projectId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/project/v1/hubs/${encodeURIComponent(hubId)}/projects/${encodeURIComponent(projectId)}/hub`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener hub de proyecto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las carpetas principales (top folders) de un proyecto
+     */
+    async obtenerCarpetasPrincipales(accessToken: string, hubId: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken || !hubId || !projectId) {
+                throw new Error('Token, hubId y projectId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/project/v1/hubs/${encodeURIComponent(hubId)}/projects/${encodeURIComponent(projectId)}/topFolders`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener carpetas principales: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea storage para subir archivos
+     */
+    async crearStorage(accessToken: string, projectId: string, storageData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !storageData) {
+                throw new Error('Token, projectId y storageData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/storage`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: storageData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear storage: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una descarga batch
+     */
+    async crearDescarga(accessToken: string, projectId: string, downloadData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !downloadData) {
+                throw new Error('Token, projectId y downloadData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/downloads`;
+
+            const response = await this.httpClient.post<any>(url, downloadData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear descarga: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el estado de una descarga
+     */
+    async obtenerEstadoDescarga(accessToken: string, projectId: string, downloadId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !downloadId) {
+                throw new Error('Token, projectId y downloadId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/downloads/${encodeURIComponent(downloadId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener estado de descarga: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el estado de un job
+     */
+    async obtenerEstadoJob(accessToken: string, projectId: string, jobId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !jobId) {
+                throw new Error('Token, projectId y jobId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/jobs/${encodeURIComponent(jobId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener estado de job: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
+

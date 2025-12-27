@@ -14,6 +14,8 @@ import { RolModule } from './presentation/modules/rol.module';
 import { PermisoModule } from './presentation/modules/permiso.module';
 import { MenuGestionModule } from './presentation/modules/menu-gestion.module';
 import { DataManagementModule } from './presentation/modules/data-management.module';
+import { DataManagementFoldersModule } from './presentation/modules/data-management-folders.module';
+import { DataManagementProjectsModule } from './presentation/modules/data-management-projects.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { DataManagementModule } from './presentation/modules/data-management.mod
     PermisoModule,
     MenuGestionModule,
     DataManagementModule,
+    DataManagementFoldersModule,
+    DataManagementProjectsModule,
   ],
 })
 export class AppModule { }
