@@ -425,4 +425,303 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== ACC PROJECTS API ====================
+
+    /**
+     * Obtiene proyectos de una cuenta ACC
+     */
+    async getAccProjects(
+        accountId: string,
+        options: Record<string, any> = {},
+        token?: string,
+    ): Promise<any> {
+        try {
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            // Get token if not provided
+            let accessToken = token;
+            if (!accessToken) {
+                const tokenData = await this.obtenerToken2Legged(['account:read']);
+                accessToken = tokenData.access_token;
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/construction/admin/v1/accounts/${encodeURIComponent(accountId)}/projects`;
+
+            // Build query parameters
+            const queryParams = this.buildAccQueryParameters(options);
+            if (queryParams) {
+                url += '?' + queryParams;
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyectos ACC: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene un proyecto específico por ID
+     */
+    async getAccProjectById(
+        projectId: string,
+        fields: string[] = [],
+        token?: string,
+    ): Promise<any> {
+        try {
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            // Get token if not provided
+            let accessToken = token;
+            if (!accessToken) {
+                const tokenData = await this.obtenerToken2Legged(['account:read']);
+                accessToken = tokenData.access_token;
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/construction/admin/v1/projects/${encodeURIComponent(projectId)}`;
+
+            if (fields.length > 0) {
+                url += '?fields=' + fields.join(',');
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyecto ACC: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un nuevo proyecto ACC
+     */
+    async createAccProject(
+        accountId: string,
+        projectData: Record<string, any>,
+        token?: string,
+        userId?: string,
+    ): Promise<any> {
+        try {
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            if (!projectData.name) {
+                throw new Error('El nombre del proyecto es requerido');
+            }
+
+            // Get token if not provided (use 3-legged for write operations)
+            let accessToken = token;
+            if (!accessToken) {
+                // For now, use 2-legged with account:write scope
+                // In production, should use 3-legged token from user context
+                const tokenData = await this.obtenerToken2Legged(['account:write']);
+                accessToken = tokenData.access_token;
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/accounts/${encodeURIComponent(accountId)}/projects`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.post<any>(url, projectData, {
+                headers,
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear proyecto ACC: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un proyecto ACC existente
+     */
+    async updateAccProject(
+        accountId: string,
+        projectId: string,
+        projectData: Record<string, any>,
+        token?: string,
+        userId?: string,
+    ): Promise<any> {
+        try {
+            if (!accountId || !projectId) {
+                throw new Error('Account ID y Project ID son requeridos');
+            }
+
+            if (Object.keys(projectData).length === 0) {
+                throw new Error('Debe proporcionar datos para actualizar');
+            }
+
+            // Get token if not provided
+            let accessToken = token;
+            if (!accessToken) {
+                const tokenData = await this.obtenerToken2Legged(['account:write']);
+                accessToken = tokenData.access_token;
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/accounts/${encodeURIComponent(accountId)}/projects/${encodeURIComponent(projectId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (userId) {
+                headers['User-Id'] = userId;
+            }
+
+            const response = await this.httpClient.patch<any>(url, projectData, {
+                headers,
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar proyecto ACC: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+
+    /**
+     * Sube una imagen para un proyecto ACC
+     */
+    async uploadAccProjectImage(
+        accountId: string,
+        projectId: string,
+        file: Express.Multer.File,
+        token?: string,
+    ): Promise<any> {
+        try {
+            if (!accountId || !projectId) {
+                throw new Error('Account ID y Project ID son requeridos');
+            }
+
+            if (!file) {
+                throw new Error('El archivo es requerido');
+            }
+
+            // Get token if not provided
+            let accessToken = token;
+            if (!accessToken) {
+                const tokenData = await this.obtenerToken2Legged(['account:write']);
+                accessToken = tokenData.access_token;
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/projects/${encodeURIComponent(projectId)}/image`;
+
+            // Create form data
+            const FormData = require('form-data');
+            const formData = new FormData();
+
+            // Determine file extension based on mime type
+            const extensionMap: Record<string, string> = {
+                'image/png': 'png',
+                'image/jpeg': 'jpg',
+                'image/jpg': 'jpg',
+                'image/bmp': 'bmp',
+                'image/gif': 'gif',
+            };
+            const ext = extensionMap[file.mimetype] || 'jpg';
+            const fileName = `project_image_${Date.now()}.${ext}`;
+
+            formData.append('chunk', file.buffer, {
+                filename: fileName,
+                contentType: file.mimetype,
+            });
+
+            // Use PATCH method as per Autodesk API documentation
+            const response = await this.httpClient.patch<any>(url, formData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    ...formData.getHeaders(),
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al subir imagen del proyecto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+
+    /**
+     * Construye los parámetros de query para las peticiones de ACC Projects
+     */
+    private buildAccQueryParameters(options: Record<string, any>): string {
+        const params: Record<string, string> = {};
+
+        if (options.fields && Array.isArray(options.fields)) {
+            params.fields = options.fields.join(',');
+        }
+
+        // Filters
+        const filterKeys = [
+            'classification', 'platform', 'products', 'name', 'type',
+            'status', 'businessUnitId', 'jobNumber', 'updatedAt',
+        ];
+
+        for (const key of filterKeys) {
+            const filterKey = `filter[${key}]`;
+            if (options[filterKey]) {
+                if (Array.isArray(options[filterKey])) {
+                    params[filterKey] = options[filterKey].join(',');
+                } else {
+                    params[filterKey] = options[filterKey];
+                }
+            }
+        }
+
+        if (options.filterTextMatch) {
+            params.filterTextMatch = options.filterTextMatch;
+        }
+
+        if (options.sort) {
+            params.sort = options.sort;
+        }
+
+        if (options.limit !== undefined) {
+            params.limit = Math.min(Number(options.limit), 200).toString();
+        }
+
+        if (options.offset !== undefined) {
+            params.offset = Number(options.offset).toString();
+        }
+
+        return new URLSearchParams(params).toString();
+    }
 }

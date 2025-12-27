@@ -4,6 +4,7 @@ import { validate } from './config/env.validation';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { AuthModule } from './presentation/modules/auth.module';
 import { AccModule } from './presentation/modules/acc.module';
+import { AccProjectsModule } from './presentation/modules/acc-projects.module';
 import { UserModule } from './presentation/modules/user.module';
 import { GeneralModule } from './presentation/modules/general.module';
 import { EmpresaModule } from './presentation/modules/empresa.module';
@@ -27,6 +28,7 @@ import { DataManagementModule } from './presentation/modules/data-management.mod
     // Módulos de funcionalidad
     AuthModule,
     AccModule,
+    AccProjectsModule,
     UserModule,
     GeneralModule,
     EmpresaModule,
