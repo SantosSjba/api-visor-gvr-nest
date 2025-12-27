@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsIn, ValidateNested } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsIn, ValidateNested, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ProductDto {
