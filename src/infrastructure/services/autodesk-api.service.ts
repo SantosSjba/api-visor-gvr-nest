@@ -2032,7 +2032,7 @@ export class AutodeskApiService {
 
             const storageUrn = data.urn;
             const displayName = data.name || data.displayName || 'Attachment';
-            
+
             // Generar attachmentId único
             let attachmentId: string | null = null;
             const match = storageUrn.match(/urn:adsk\.objects:os\.object:[^\/]+\/(.+)$/);
@@ -2221,6 +2221,599 @@ export class AutodeskApiService {
                 success: false,
                 error: error.response?.data?.message || error.message,
             };
+        }
+    }
+
+    // ==================== BIM 360 ISSUES API V2 ====================
+
+    /**
+     * Normaliza el projectId para BIM 360 Issues API v2
+     * Elimina el prefijo b. si existe
+     */
+    /**
+     * Normaliza el projectId para BIM 360 Issues API v2
+     * Elimina el prefijo b. si existe
+     */
+    private normalizarBim360ProjectId(projectId: string): string {
+        return projectId.startsWith('b.') ? projectId.substring(2) : projectId;
+    }
+
+    /**
+     * Obtiene el perfil del usuario en un proyecto BIM 360
+     */
+    async obtenerPerfilUsuarioBim360(accessToken: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/users/me`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener perfil de usuario BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los tipos de incidencias BIM 360
+     */
+    async obtenerTiposIncidenciasBim360(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-types`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener tipos de incidencias BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las definiciones de atributos BIM 360
+     */
+    async obtenerDefinicionesAtributosBim360(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-attribute-definitions`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener definiciones de atributos BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los mapeos de atributos BIM 360
+     */
+    async obtenerMapeosAtributosBim360(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-attribute-mappings`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener mapeos de atributos BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las categorías de causa raíz BIM 360
+     */
+    async obtenerCategoriasRaizBim360(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-root-cause-categories`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener categorías de causa raíz BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene incidencias BIM 360
+     */
+    async obtenerIncidenciasBim360(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (filters.filter && typeof filters.filter === 'object') {
+                for (const [key, value] of Object.entries(filters.filter)) {
+                    queryParams[`filter[${key}]`] = String(value);
+                }
+            }
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener incidencias BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una incidencia BIM 360
+     */
+    async crearIncidenciaBim360(accessToken: string, projectId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues`;
+
+            const response = await this.httpClient.post<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear incidencia BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene una incidencia BIM 360 por ID
+     */
+    async obtenerIncidenciaPorIdBim360(accessToken: string, projectId: string, issueId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener incidencia BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza una incidencia BIM 360
+     */
+    async actualizarIncidenciaBim360(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}`;
+
+            const response = await this.httpClient.patch<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar incidencia BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene comentarios de una incidencia BIM 360
+     */
+    /**
+     * Obtiene comentarios de una incidencia BIM 360
+     */
+    async obtenerComentariosBim360(accessToken: string, projectId: string, issueId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/comments`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener comentarios BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un comentario en una incidencia BIM 360
+     */
+    async crearComentarioBim360(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/comments`;
+
+            const response = await this.httpClient.post<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear comentario BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los adjuntos de una incidencia BIM 360
+     */
+    async obtenerAdjuntosBim360(accessToken: string, projectId: string, issueId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/attachments`;
+
+            const queryParams: Record<string, string> = {};
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener adjuntos BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un adjunto para una incidencia BIM 360
+     */
+    async crearAdjuntoBim360(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+            if (!data.urn) {
+                throw new Error('El campo urn es requerido para crear un attachment');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/attachments`;
+
+            const storageUrn = data.urn;
+            const displayName = data.name || data.displayName || 'Attachment';
+
+            // Generar attachmentId único si es posible desde el URN
+            let attachmentId: string | null = null;
+            const match = storageUrn.match(/urn:adsk\.objects:os\.object:[^\/]+\/(.+)$/);
+            if (match) {
+                const objectKey = match[1];
+                const path = require('path');
+                attachmentId = path.parse(objectKey).name;
+            }
+
+            if (!attachmentId) {
+                const { randomUUID } = require('crypto');
+                attachmentId = randomUUID();
+            }
+
+            let fileName = data.fileName || null;
+            if (!fileName && match) {
+                fileName = match[1];
+            }
+            if (!fileName) {
+                fileName = displayName;
+            }
+
+            const payload = {
+                domainEntityId: issueId,
+                attachments: [
+                    {
+                        attachmentId: attachmentId,
+                        displayName: displayName,
+                        fileName: fileName,
+                        attachmentType: 'issue-attachment',
+                        storageUrn: storageUrn,
+                    },
+                ],
+            };
+
+            // Para BIM 360 a veces se espera el array directamente o la estructura anterior
+            // Con Unified API (construction/issues/v1), la estructura es domainEntityId + attachments array
+
+            const response = await this.httpClient.post<any>(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear adjunto BIM 360: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un adjunto de una incidencia BIM 360
+     */
+    async actualizarAdjuntoBim360(accessToken: string, projectId: string, issueId: string, attachmentId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+            if (!attachmentId) {
+                throw new Error('El ID del adjunto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarBim360ProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/attachments/${encodeURIComponent(attachmentId)}`;
+
+            const response = await this.httpClient.patch<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar adjunto BIM 360: ${error.response?.data?.message || error.message}`,
+            );
         }
     }
 }
