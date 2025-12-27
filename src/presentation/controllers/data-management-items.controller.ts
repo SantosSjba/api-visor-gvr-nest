@@ -2,6 +2,8 @@ import {
     Controller,
     Get,
     Post,
+    Patch,
+    Delete,
     Query,
     Param,
     Body,
@@ -29,9 +31,16 @@ import { ObtenerRelacionesRefsItemUseCase } from '../../application/use-cases/da
 import { ObtenerTipVersionUseCase } from '../../application/use-cases/data-management/items/obtener-tip-version.use-case';
 import { ObtenerVersionesUseCase } from '../../application/use-cases/data-management/items/obtener-versiones.use-case';
 import { SubirArchivoUseCase } from '../../application/use-cases/data-management/items/subir-archivo.use-case';
+import { CrearItemUseCase } from '../../application/use-cases/data-management/items/crear-item.use-case';
+import { CrearReferenciaItemUseCase } from '../../application/use-cases/data-management/items/crear-referencia-item.use-case';
+import { ActualizarItemUseCase } from '../../application/use-cases/data-management/items/actualizar-item.use-case';
+import { EliminarItemUseCase } from '../../application/use-cases/data-management/items/eliminar-item.use-case';
 
 // DTOs
 import { SubirArchivoDto } from '../../application/dtos/data-management/items/subir-archivo.dto';
+import { CrearItemDto } from '../../application/dtos/data-management/items/crear-item.dto';
+import { CrearReferenciaItemDto } from '../../application/dtos/data-management/items/crear-referencia-item.dto';
+import { ActualizarItemDto } from '../../application/dtos/data-management/items/actualizar-item.dto';
 
 @Controller('data-management/items')
 @UseGuards(JwtAuthGuard)
@@ -49,6 +58,11 @@ export class DataManagementItemsController {
         private readonly obtenerVersionesUseCase: ObtenerVersionesUseCase,
         // Upload
         private readonly subirArchivoUseCase: SubirArchivoUseCase,
+        // Create/Update/Delete
+        private readonly crearItemUseCase: CrearItemUseCase,
+        private readonly crearReferenciaItemUseCase: CrearReferenciaItemUseCase,
+        private readonly actualizarItemUseCase: ActualizarItemUseCase,
+        private readonly eliminarItemUseCase: EliminarItemUseCase,
     ) { }
 
     /**
@@ -80,6 +94,30 @@ export class DataManagementItemsController {
                 included: resultado.included,
             },
             'Archivo subido exitosamente',
+        );
+    }
+
+    /**
+     * POST - Crear un nuevo item (primera versión de un archivo) - Método manual avanzado
+     * POST /data-management/items/:projectId
+     * IMPORTANTE: Esta ruta debe estar DESPUÉS de /upload
+     */
+    @Post(':projectId')
+    @HttpCode(HttpStatus.CREATED)
+    async crearItem(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Body() dto: CrearItemDto,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.crearItemUseCase.execute(user.sub, projectId, dto);
+
+        return ApiResponseDto.success(
+            {
+                item: resultado.data,
+                included: resultado.included || [],
+            },
+            'Item creado exitosamente',
         );
     }
 
@@ -248,6 +286,77 @@ export class DataManagementItemsController {
         return ApiResponseDto.success(
             { ...resultado, data: resultado.data, links: resultado.links },
             'Versiones obtenidas exitosamente',
+        );
+    }
+
+    /**
+     * POST - Crear una referencia en un item
+     * POST /data-management/items/:projectId/:itemId/relationships/refs
+     */
+    @Post(':projectId/:itemId/relationships/refs')
+    @HttpCode(HttpStatus.CREATED)
+    async crearReferencia(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Param('itemId') itemId: string,
+        @Body() dto: CrearReferenciaItemDto,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.crearReferenciaItemUseCase.execute(user.sub, projectId, itemId, dto.data);
+
+        return ApiResponseDto.success(
+            resultado.data,
+            'Referencia creada exitosamente',
+        );
+    }
+
+    /**
+     * PATCH - Actualizar un item
+     * PATCH /data-management/items/:projectId/:itemId
+     */
+    @Patch(':projectId/:itemId')
+    @HttpCode(HttpStatus.OK)
+    async actualizarItem(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Param('itemId') itemId: string,
+        @Body() dto: ActualizarItemDto,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.actualizarItemUseCase.execute(user.sub, projectId, itemId, dto);
+
+        return ApiResponseDto.success(
+            resultado.data,
+            'Item actualizado exitosamente',
+        );
+    }
+
+    /**
+     * DELETE - Eliminar un item (marcar como oculto/mover a papelera)
+     * DELETE /data-management/items/:projectId/:itemId
+     */
+    @Delete(':projectId/:itemId')
+    @HttpCode(HttpStatus.OK)
+    async eliminarItem(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Param('itemId') itemId: string,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.eliminarItemUseCase.execute(user.sub, projectId, itemId);
+
+        const message = resultado.message
+            || (resultado.wasAlreadyDeleted
+                ? 'El item ya estaba marcado como eliminado'
+                : 'Item marcado como eliminado creando versión Deleted');
+
+        return ApiResponseDto.success(
+            {
+                deletedVersion: resultado.data || null,
+                deletedAt: resultado.deletedAt || null,
+                wasAlreadyDeleted: resultado.wasAlreadyDeleted || false,
+            },
+            message,
         );
     }
 }

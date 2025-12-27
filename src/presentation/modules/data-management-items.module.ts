@@ -14,6 +14,10 @@ import { ObtenerRelacionesRefsItemUseCase } from '../../application/use-cases/da
 import { ObtenerTipVersionUseCase } from '../../application/use-cases/data-management/items/obtener-tip-version.use-case';
 import { ObtenerVersionesUseCase } from '../../application/use-cases/data-management/items/obtener-versiones.use-case';
 import { SubirArchivoUseCase } from '../../application/use-cases/data-management/items/subir-archivo.use-case';
+import { CrearItemUseCase } from '../../application/use-cases/data-management/items/crear-item.use-case';
+import { CrearReferenciaItemUseCase } from '../../application/use-cases/data-management/items/crear-referencia-item.use-case';
+import { ActualizarItemUseCase } from '../../application/use-cases/data-management/items/actualizar-item.use-case';
+import { EliminarItemUseCase } from '../../application/use-cases/data-management/items/eliminar-item.use-case';
 
 // Infrastructure
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
@@ -37,6 +41,11 @@ import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interfa
         ObtenerVersionesUseCase,
         // Upload
         SubirArchivoUseCase,
+        // Create/Update/Delete
+        CrearItemUseCase,
+        CrearReferenciaItemUseCase,
+        ActualizarItemUseCase,
+        EliminarItemUseCase,
         // Infrastructure
         AutodeskApiService,
         HttpClientService,

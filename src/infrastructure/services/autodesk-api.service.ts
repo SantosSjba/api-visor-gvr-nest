@@ -5137,6 +5137,145 @@ export class AutodeskApiService {
             );
         }
     }
+
+    /**
+     * Crea una referencia en un item
+     */
+    async crearReferenciaItem(accessToken: string, projectId: string, itemId: string, refData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId || !refData) {
+                throw new Error('Token, projectId, itemId y refData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/relationships/refs`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: refData,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear referencia: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un item
+     */
+    async actualizarItem(accessToken: string, projectId: string, itemId: string, itemData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId || !itemData) {
+                throw new Error('Token, projectId, itemId y itemData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}`;
+
+            const response = await this.httpClient.patch<any>(url, itemData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Elimina un item (marca como eliminado creando versión Deleted)
+     */
+    async eliminarItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            // Paso 1: Validar la versión tip para evitar duplicar eliminaciones
+            const tipInfo = await this.obtenerTipVersion(accessToken, projectId, itemId);
+            const tipData = tipInfo.data || null;
+            const tipExtension = tipData?.attributes?.extension?.type || null;
+
+            if (tipExtension && tipExtension.toLowerCase().includes('deleted')) {
+                return {
+                    success: true,
+                    message: 'El item ya estaba marcado como eliminado mediante versión Deleted',
+                    data: tipData,
+                    wasAlreadyDeleted: true,
+                };
+            }
+
+            // Paso 2: Crear la versión Deleted
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions`;
+
+            const payload = {
+                jsonapi: {
+                    version: '1.0',
+                },
+                data: {
+                    type: 'versions',
+                    attributes: {
+                        extension: {
+                            type: 'versions:autodesk.core:Deleted',
+                            version: '1.0',
+                        },
+                    },
+                    relationships: {
+                        item: {
+                            data: {
+                                type: 'items',
+                                id: itemId,
+                            },
+                        },
+                    },
+                },
+            };
+
+            const response = await this.httpClient.post<any>(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                message: 'Item marcado como eliminado creando versión Deleted',
+                data: response.data.data || null,
+                deletedAt: new Date().toISOString(),
+                wasAlreadyDeleted: false,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al eliminar item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 
 
