@@ -1,0 +1,22 @@
+export class DataManagementProject {
+    id: string;
+    type: string;
+    attributes?: {
+        name?: string;
+        scopes?: string[];
+        extension?: {
+            type?: string;
+            version?: string;
+            schema?: {
+                href?: string;
+            };
+            data?: any;
+        };
+    };
+    relationships?: any;
+    links?: {
+        self?: {
+            href?: string;
+        };
+    };
+}

@@ -12,6 +12,7 @@ import { ProyectoModule } from './presentation/modules/proyecto.module';
 import { RolModule } from './presentation/modules/rol.module';
 import { PermisoModule } from './presentation/modules/permiso.module';
 import { MenuGestionModule } from './presentation/modules/menu-gestion.module';
+import { DataManagementModule } from './presentation/modules/data-management.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { MenuGestionModule } from './presentation/modules/menu-gestion.module';
     RolModule,
     PermisoModule,
     MenuGestionModule,
+    DataManagementModule,
   ],
 })
 export class AppModule { }

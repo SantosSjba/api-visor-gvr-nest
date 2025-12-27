@@ -196,4 +196,233 @@ export class AutodeskApiService {
         const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
         return expirationDate.getTime() - now.getTime() < bufferTime;
     }
+
+    // ==================== DATA MANAGEMENT API ====================
+
+    /**
+     * Obtiene los hubs accesibles para el usuario autenticado
+     */
+    async obtenerHubs(accessToken: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/project/v1/hubs`;
+
+            // Build query parameters for filters
+            const queryParams: string[] = [];
+            if (filters['id']) {
+                queryParams.push(`filter[id]=${encodeURIComponent(filters['id'])}`);
+            }
+            if (filters['name']) {
+                queryParams.push(`filter[name]=${encodeURIComponent(filters['name'])}`);
+            }
+            if (filters['extension.type']) {
+                queryParams.push(`filter[extension.type]=${encodeURIComponent(filters['extension.type'])}`);
+            }
+
+            if (queryParams.length > 0) {
+                url += '?' + queryParams.join('&');
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener hubs: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los proyectos de un hub específico
+     */
+    async obtenerProyectos(accessToken: string, hubId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!hubId) {
+                throw new Error('El ID del hub es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/project/v1/hubs/${encodeURIComponent(hubId)}/projects`;
+
+            // Build query parameters for filters
+            const queryParams: string[] = [];
+            for (const [key, value] of Object.entries(filters)) {
+                if (value) {
+                    queryParams.push(`filter[${key}]=${encodeURIComponent(value)}`);
+                }
+            }
+
+            if (queryParams.length > 0) {
+                url += '?' + queryParams.join('&');
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyectos: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los detalles de un proyecto específico
+     */
+    async obtenerProyectoPorId(accessToken: string, hubId: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!hubId) {
+                throw new Error('El ID del hub es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/project/v1/hubs/${encodeURIComponent(hubId)}/projects/${encodeURIComponent(projectId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyecto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los items (carpetas/archivos) de un proyecto
+     */
+    async obtenerItems(accessToken: string, projectId: string, folderId?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            // Si no se especifica folderId, usar "root"
+            const folder = folderId || 'root';
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(folder)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener items: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los detalles de un item específico
+     */
+    async obtenerItemPorId(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!itemId) {
+                throw new Error('El ID del item es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener item: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las versiones de un item específico
+     */
+    async obtenerVersionesItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!itemId) {
+                throw new Error('El ID del item es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/versions`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener versiones: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
