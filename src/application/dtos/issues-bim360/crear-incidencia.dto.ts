@@ -49,3 +49,4 @@ export class CrearIncidenciaDto {
     linkedDocuments?: any[];
 }
 
+

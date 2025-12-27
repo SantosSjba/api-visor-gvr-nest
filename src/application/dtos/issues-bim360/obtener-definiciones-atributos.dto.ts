@@ -16,3 +16,4 @@ export class ObtenerDefinicionesAtributosDto {
     offset?: number;
 }
 
+

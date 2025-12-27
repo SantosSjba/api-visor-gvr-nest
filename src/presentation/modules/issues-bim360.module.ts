@@ -65,3 +65,4 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
 })
 export class IssuesBim360Module { }
 
+

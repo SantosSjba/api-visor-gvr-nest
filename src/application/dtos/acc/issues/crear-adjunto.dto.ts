@@ -25,3 +25,4 @@ export class CrearAdjuntoDto {
     type?: string;
 }
 
+

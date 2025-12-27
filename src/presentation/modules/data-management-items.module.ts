@@ -13,6 +13,7 @@ import { ObtenerRelacionesLinksItemUseCase } from '../../application/use-cases/d
 import { ObtenerRelacionesRefsItemUseCase } from '../../application/use-cases/data-management/items/obtener-relaciones-refs-item.use-case';
 import { ObtenerTipVersionUseCase } from '../../application/use-cases/data-management/items/obtener-tip-version.use-case';
 import { ObtenerVersionesUseCase } from '../../application/use-cases/data-management/items/obtener-versiones.use-case';
+import { SubirArchivoUseCase } from '../../application/use-cases/data-management/items/subir-archivo.use-case';
 
 // Infrastructure
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
@@ -34,6 +35,8 @@ import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interfa
         ObtenerRelacionesRefsItemUseCase,
         ObtenerTipVersionUseCase,
         ObtenerVersionesUseCase,
+        // Upload
+        SubirArchivoUseCase,
         // Infrastructure
         AutodeskApiService,
         HttpClientService,

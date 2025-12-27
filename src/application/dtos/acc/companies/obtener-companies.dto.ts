@@ -25,3 +25,4 @@ export class ObtenerCompaniesDto {
     region?: string;
 }
 
+

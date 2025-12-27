@@ -11,3 +11,4 @@ export class ActualizarImagenProyectoBim360Dto {
     region?: string;
 }
 
+

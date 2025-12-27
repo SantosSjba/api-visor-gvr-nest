@@ -16,3 +16,4 @@ export class ObtenerMapeosAtributosDto {
     offset?: number;
 }
 
+

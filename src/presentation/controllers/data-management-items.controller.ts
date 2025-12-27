@@ -1,13 +1,18 @@
 import {
     Controller,
     Get,
+    Post,
     Query,
     Param,
+    Body,
     HttpCode,
     HttpStatus,
     Req,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
@@ -23,6 +28,10 @@ import { ObtenerRelacionesLinksItemUseCase } from '../../application/use-cases/d
 import { ObtenerRelacionesRefsItemUseCase } from '../../application/use-cases/data-management/items/obtener-relaciones-refs-item.use-case';
 import { ObtenerTipVersionUseCase } from '../../application/use-cases/data-management/items/obtener-tip-version.use-case';
 import { ObtenerVersionesUseCase } from '../../application/use-cases/data-management/items/obtener-versiones.use-case';
+import { SubirArchivoUseCase } from '../../application/use-cases/data-management/items/subir-archivo.use-case';
+
+// DTOs
+import { SubirArchivoDto } from '../../application/dtos/data-management/items/subir-archivo.dto';
 
 @Controller('data-management/items')
 @UseGuards(JwtAuthGuard)
@@ -38,7 +47,41 @@ export class DataManagementItemsController {
         private readonly obtenerRelacionesRefsItemUseCase: ObtenerRelacionesRefsItemUseCase,
         private readonly obtenerTipVersionUseCase: ObtenerTipVersionUseCase,
         private readonly obtenerVersionesUseCase: ObtenerVersionesUseCase,
+        // Upload
+        private readonly subirArchivoUseCase: SubirArchivoUseCase,
     ) { }
+
+    /**
+     * POST - Subir archivo completo a una carpeta específica
+     * POST /data-management/items/:projectId/upload
+     * IMPORTANTE: Esta ruta debe estar ANTES de otras rutas POST con {projectId}
+     */
+    @Post(':projectId/upload')
+    @UseInterceptors(FileInterceptor('file'))
+    @HttpCode(HttpStatus.CREATED)
+    async subirArchivo(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body() dto: SubirArchivoDto,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.subirArchivoUseCase.execute(
+            user.sub,
+            projectId,
+            dto.folderId,
+            file,
+        );
+
+        return ApiResponseDto.success(
+            {
+                storage: resultado.storage,
+                item: resultado.item,
+                included: resultado.included,
+            },
+            'Archivo subido exitosamente',
+        );
+    }
 
     /**
      * GET - Obtener un item específico por ID

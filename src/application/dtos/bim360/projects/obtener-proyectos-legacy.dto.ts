@@ -10,3 +10,4 @@ export class ObtenerProyectosLegacyDto {
     [key: string]: any;
 }
 
+

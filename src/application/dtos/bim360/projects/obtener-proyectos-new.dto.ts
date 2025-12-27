@@ -5,3 +5,4 @@ export class ObtenerProyectosNewDto {
     [key: string]: any;
 }
 
+

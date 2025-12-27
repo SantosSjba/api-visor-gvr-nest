@@ -16,3 +16,4 @@ export class ObtenerTiposIncidenciasDto {
     offset?: number;
 }
 
+

@@ -4967,6 +4967,176 @@ export class AutodeskApiService {
             );
         }
     }
+
+    /**
+     * Crea storage para subir un archivo a una carpeta específica
+     */
+    async crearStorageParaItem(accessToken: string, projectId: string, folderId: string, fileName: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !folderId || !fileName) {
+                throw new Error('Token, projectId, folderId y fileName son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/storage`;
+
+            const storageData = {
+                jsonapi: {
+                    version: '1.0',
+                },
+                data: {
+                    type: 'objects',
+                    attributes: {
+                        name: fileName,
+                    },
+                    relationships: {
+                        target: {
+                            data: {
+                                type: 'folders',
+                                id: folderId,
+                            },
+                        },
+                    },
+                },
+            };
+
+            const response = await this.httpClient.post<any>(url, storageData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear storage: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene URL firmada de S3 para subir archivo
+     */
+    async obtenerUrlFirmadaS3(accessToken: string, bucketKey: string, objectKey: string, parts: number = 1): Promise<any> {
+        try {
+            if (!accessToken || !bucketKey || !objectKey) {
+                throw new Error('Token, bucketKey y objectKey son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3upload?parts=${parts}&minutesExpiration=5`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener URL firmada de S3: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Sube archivo a URL firmada de S3
+     */
+    async subirArchivoAUrlFirmada(signedUrl: string, fileBuffer: Buffer): Promise<any> {
+        try {
+            if (!signedUrl || !fileBuffer) {
+                throw new Error('Signed URL y file buffer son requeridos');
+            }
+
+            const response = await this.httpClient.put<any>(signedUrl, fileBuffer, {
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'Content-Length': fileBuffer.length.toString(),
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
+            });
+
+            return {
+                success: true,
+                statusCode: response.status || 200,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al subir archivo a S3: ${error.response?.status || error.status || 'Unknown'} - ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Completa la subida del archivo
+     */
+    async completarSubida(accessToken: string, bucketKey: string, objectKey: string, uploadKey: string): Promise<any> {
+        try {
+            if (!accessToken || !bucketKey || !objectKey || !uploadKey) {
+                throw new Error('Token, bucketKey, objectKey y uploadKey son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3upload`;
+
+            const payload = {
+                uploadKey,
+            };
+
+            const response = await this.httpClient.post<any>(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al completar subida: ${error.response?.data?.reason || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un item (archivo) en un proyecto
+     */
+    async crearItem(accessToken: string, projectId: string, itemData: any): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemData) {
+                throw new Error('Token, projectId y itemData son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items`;
+
+            const response = await this.httpClient.post<any>(url, itemData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+                included: response.data.included || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 
 

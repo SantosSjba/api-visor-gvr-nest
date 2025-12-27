@@ -21,3 +21,4 @@ export class ObtenerTiposIncidenciasBim360UseCase {
     }
 }
 
+

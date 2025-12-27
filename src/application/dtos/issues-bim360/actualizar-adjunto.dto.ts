@@ -14,3 +14,4 @@ export class ActualizarAdjuntoDto {
     data?: Record<string, any>;
 }
 
+

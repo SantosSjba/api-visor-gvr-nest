@@ -47,3 +47,4 @@ export class ActualizarIncidenciaDto {
     locationDetails?: string;
 }
 
+
