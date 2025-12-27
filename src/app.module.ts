@@ -18,6 +18,7 @@ import { DataManagementFoldersModule } from './presentation/modules/data-managem
 import { DataManagementProjectsModule } from './presentation/modules/data-management-projects.module';
 import { DataManagementItemsModule } from './presentation/modules/data-management-items.module';
 import { AccViewerModule } from './presentation/modules/acc-viewer.module';
+import { AccIssuesModule } from './presentation/modules/acc-issues.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AccViewerModule } from './presentation/modules/acc-viewer.module';
     AuthModule,
     AccModule,
     AccProjectsModule,
+    AccIssuesModule,
     UserModule,
     GeneralModule,
     EmpresaModule,

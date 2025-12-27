@@ -1606,5 +1606,623 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== ACC ISSUES API ====================
+
+    /**
+     * Normaliza el projectId removiendo el prefijo b. si existe
+     */
+    private normalizarProjectId(projectId: string): string {
+        return projectId.startsWith('b.') ? projectId.substring(2) : projectId;
+    }
+
+    /**
+     * Obtiene el perfil del usuario en un proyecto
+     */
+    async obtenerPerfilUsuario(accessToken: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/users/me`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener perfil de usuario: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los tipos de incidencias
+     */
+    async obtenerTiposIncidencias(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-types`;
+
+            if (!filters.include) {
+                filters.include = 'subtypes';
+            }
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener tipos de incidencias: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las definiciones de atributos
+     */
+    async obtenerDefinicionesAtributos(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-attribute-definitions`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener definiciones de atributos: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los mapeos de atributos
+     */
+    async obtenerMapeosAtributos(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-attribute-mappings`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener mapeos de atributos: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las categorías de causa raíz
+     */
+    async obtenerCategoriasRaiz(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issue-root-cause-categories`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener categorías de causa raíz: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene incidencias
+     */
+    async obtenerIncidencias(accessToken: string, projectId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues`;
+
+            // Remover include si existe
+            const cleanFilters = { ...filters };
+            delete cleanFilters.include;
+
+            if (Object.keys(cleanFilters).length > 0) {
+                url += '?' + new URLSearchParams(cleanFilters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener incidencias: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea una incidencia
+     */
+    async crearIncidencia(accessToken: string, projectId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues`;
+
+            const response = await this.httpClient.post<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear incidencia: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene una incidencia por ID
+     */
+    async obtenerIncidenciaPorId(accessToken: string, projectId: string, issueId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener incidencia: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza una incidencia
+     */
+    async actualizarIncidencia(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}`;
+
+            const response = await this.httpClient.patch<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar incidencia: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene comentarios de una incidencia
+     */
+    async obtenerComentarios(accessToken: string, projectId: string, issueId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/comments`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.results || [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener comentarios: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un comentario en una incidencia
+     */
+    async crearComentario(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(issueId)}/comments`;
+
+            const response = await this.httpClient.post<any>(url, data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear comentario: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Crea un adjunto para una incidencia
+     */
+    async crearAdjunto(accessToken: string, projectId: string, issueId: string, data: Record<string, any>): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+            if (!data.urn) {
+                throw new Error('El campo urn es requerido para crear un attachment');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/attachments`;
+
+            const storageUrn = data.urn;
+            const displayName = data.name || data.displayName || 'Attachment';
+            
+            // Generar attachmentId único
+            let attachmentId: string | null = null;
+            const match = storageUrn.match(/urn:adsk\.objects:os\.object:[^\/]+\/(.+)$/);
+            if (match) {
+                const objectKey = match[1];
+                const path = require('path');
+                attachmentId = path.parse(objectKey).name;
+            }
+
+            if (!attachmentId) {
+                const { randomUUID } = require('crypto');
+                attachmentId = randomUUID();
+            }
+
+            let fileName = data.fileName || null;
+            if (!fileName && match) {
+                fileName = match[1];
+            }
+            if (!fileName) {
+                fileName = displayName;
+            }
+
+            const payload = {
+                domainEntityId: issueId,
+                attachments: [
+                    {
+                        attachmentId: attachmentId,
+                        displayName: displayName,
+                        fileName: fileName,
+                        attachmentType: 'issue-attachment',
+                        storageUrn: storageUrn,
+                    },
+                ],
+            };
+
+            const response = await this.httpClient.post<any>(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear adjunto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los adjuntos de una incidencia
+     */
+    async obtenerAdjuntos(accessToken: string, projectId: string, issueId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/attachments/${encodeURIComponent(issueId)}/items`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            const attachments = response.data.attachments ||
+                response.data.results ||
+                response.data.items ||
+                response.data ||
+                [];
+
+            return {
+                data: Array.isArray(attachments) ? attachments : [],
+                pagination: response.data.pagination || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener adjuntos: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Elimina un adjunto de una incidencia
+     */
+    async eliminarAdjunto(accessToken: string, projectId: string, issueId: string, attachmentId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!issueId) {
+                throw new Error('El ID de la incidencia es requerido');
+            }
+            if (!attachmentId) {
+                throw new Error('El ID del adjunto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+            const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/attachments/${encodeURIComponent(issueId)}/items/${encodeURIComponent(attachmentId)}`;
+
+            await this.httpClient.delete<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                success: true,
+                message: 'Adjunto eliminado correctamente',
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al eliminar adjunto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene la URL firmada de una miniatura desde un snapshotUrn
+     */
+    async obtenerUrlMiniatura(accessToken: string, snapshotUrn: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!snapshotUrn) {
+                throw new Error('El snapshotUrn es requerido');
+            }
+
+            // Si ya es una URL o data URL, retornarla directamente
+            if (snapshotUrn.startsWith('data:') || snapshotUrn.startsWith('http')) {
+                return {
+                    success: true,
+                    url: snapshotUrn,
+                };
+            }
+
+            let urn = snapshotUrn.replace(/\\\//g, '/');
+            urn = decodeURIComponent(urn);
+
+            const match = urn.match(/urn:adsk\.objects:os\.object:([^\/]+)\/(.+)/);
+            if (!match) {
+                throw new Error(`Formato de snapshotUrn inválido: ${snapshotUrn}`);
+            }
+
+            const bucketKey = match[1];
+            const objectKey = match[2];
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3download`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            if (!response.data.url) {
+                throw new Error('No se recibió URL firmada en la respuesta');
+            }
+
+            return {
+                success: true,
+                url: response.data.url,
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message,
+            };
+        }
+    }
 }
+
 
