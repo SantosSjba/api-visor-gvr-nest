@@ -37,7 +37,6 @@ import { EliminarCarpetaUseCase } from '../../application/use-cases/data-managem
 
 // DTOs - Group 1
 import { ObtenerCarpetaPorIdDto } from '../../application/dtos/data-management/folders/obtener-carpeta-por-id.dto';
-import { ObtenerContenidoCarpetaDto } from '../../application/dtos/data-management/folders/obtener-contenido-carpeta.dto';
 import { BuscarEnContenidoCarpetaDto } from '../../application/dtos/data-management/folders/buscar-en-contenido-carpeta.dto';
 import { ObtenerCarpetaPadreDto } from '../../application/dtos/data-management/folders/obtener-carpeta-padre.dto';
 import { ObtenerReferenciasDto } from '../../application/dtos/data-management/folders/obtener-referencias.dto';
@@ -133,10 +132,10 @@ export class DataManagementFoldersController {
         @Req() request: Request,
         @Param('projectId') projectId: string,
         @Param('folderId') folderId: string,
-        @Query() dto: ObtenerContenidoCarpetaDto,
+        @Query() queryParams: any, // Usar any en lugar de DTO para permitir cualquier parámetro
     ) {
         const user = (request as any).user;
-        const resultado = await this.obtenerContenidoCarpetaUseCase.execute(user.sub, projectId, folderId, dto);
+        const resultado = await this.obtenerContenidoCarpetaUseCase.execute(user.sub, projectId, folderId, queryParams);
 
         return ApiResponseDto.success(
             { ...resultado, data: resultado.data, links: resultado.links },

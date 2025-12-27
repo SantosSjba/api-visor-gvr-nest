@@ -16,6 +16,7 @@ import { MenuGestionModule } from './presentation/modules/menu-gestion.module';
 import { DataManagementModule } from './presentation/modules/data-management.module';
 import { DataManagementFoldersModule } from './presentation/modules/data-management-folders.module';
 import { DataManagementProjectsModule } from './presentation/modules/data-management-projects.module';
+import { DataManagementItemsModule } from './presentation/modules/data-management-items.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { DataManagementProjectsModule } from './presentation/modules/data-manage
     DataManagementModule,
     DataManagementFoldersModule,
     DataManagementProjectsModule,
+    DataManagementItemsModule,
   ],
 })
 export class AppModule { }

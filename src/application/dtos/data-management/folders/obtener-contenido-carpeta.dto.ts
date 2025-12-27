@@ -1,7 +1,6 @@
-import { IsOptional, IsObject } from 'class-validator';
-
+// DTO vacío para permitir cualquier parámetro de query sin validación
+// Se usa 'any' en el controller en lugar de este DTO
 export class ObtenerContenidoCarpetaDto {
-    @IsOptional()
-    @IsObject()
-    filters?: Record<string, any>;
+    [key: string]: any;
 }
+

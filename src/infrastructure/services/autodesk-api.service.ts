@@ -1371,5 +1371,176 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== DATA MANAGEMENT ITEMS API ====================
+
+    /**
+     * Descargar un item (archivo)
+     */
+    async descargarItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/download`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al descargar item: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el padre de un item
+     */
+    async obtenerItemPadre(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/parent`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener item padre: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las referencias (refs) de un item
+     */
+    async obtenerReferenciasItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+                links: response.data.links || {},
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener referencias de item: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de links de un item
+     */
+    async obtenerRelacionesLinksItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/relationships/links`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de links de item: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las relaciones de refs de un item
+     */
+    async obtenerRelacionesRefsItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/relationships/refs`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener relaciones de refs de item: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene la versión tip (más reciente) de un item
+     */
+    async obtenerTipVersion(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId) {
+                throw new Error('Token, projectId y itemId son requeridos');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/tip`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener versión tip: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 

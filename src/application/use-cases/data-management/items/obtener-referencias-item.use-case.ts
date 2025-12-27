@@ -1,17 +1,16 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { ACC_REPOSITORY, type IAccRepository } from '../../../../domain/repositories/acc.repository.interface';
-import { ObtenerContenidoCarpetaDto } from '../../../dtos/data-management/folders/obtener-contenido-carpeta.dto';
 
 @Injectable()
-export class ObtenerContenidoCarpetaUseCase {
+export class ObtenerReferenciasItemUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
         @Inject(ACC_REPOSITORY)
         private readonly accRepository: IAccRepository,
     ) { }
 
-    async execute(userId: number, projectId: string, folderId: string, dto: ObtenerContenidoCarpetaDto): Promise<any> {
+    async execute(userId: number, projectId: string, itemId: string, queryParams: any): Promise<any> {
         const token = await this.accRepository.obtenerToken3LeggedPorUsuario(userId);
 
         if (!token) {
@@ -22,7 +21,6 @@ export class ObtenerContenidoCarpetaUseCase {
             throw new UnauthorizedException('El token ha expirado. Por favor, refresca tu token.');
         }
 
-        // Pasar el DTO completo como filtros para que incluya filter[type], filter[extension.type], etc.
-        return await this.autodeskApiService.obtenerContenidoCarpeta(token.tokenAcceso, projectId, folderId, dto);
+        return await this.autodeskApiService.obtenerReferenciasItem(token.tokenAcceso, projectId, itemId);
     }
 }
