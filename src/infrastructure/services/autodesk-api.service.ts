@@ -4450,6 +4450,359 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== BIM 360 PROJECTS API ====================
+
+    /**
+     * Construye la URL base para BIM 360 Projects API según la región
+     */
+    private buildBim360ProjectsUrl(accountId: string, region?: string, projectId?: string, endpoint?: string): string {
+        const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+        let url = '';
+
+        if (region && region.toUpperCase() !== 'US') {
+            url = `${baseUrl}/hq/v1/regions/${region.toLowerCase()}/accounts/${encodeURIComponent(accountId)}/projects`;
+        } else {
+            url = `${baseUrl}/hq/v1/accounts/${encodeURIComponent(accountId)}/projects`;
+        }
+
+        if (projectId) {
+            url += `/${encodeURIComponent(projectId)}`;
+        }
+
+        if (endpoint) {
+            url += `/${endpoint}`;
+        }
+
+        return url;
+    }
+
+    /**
+     * Crea un nuevo proyecto BIM 360
+     */
+    async crearProyectoBim360(accessToken: string, accountId: string, projectData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const url = this.buildBim360ProjectsUrl(accountId, region);
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region.toUpperCase();
+            }
+
+            const response = await this.httpClient.post<any>(url, projectData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear proyecto BIM 360: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene proyectos de una cuenta (Legacy - solo BIM 360)
+     */
+    async obtenerProyectosLegacy(accessToken: string, accountId: string, filters: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            let url = this.buildBim360ProjectsUrl(accountId, region);
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region.toUpperCase();
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyectos legacy: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene proyectos de una cuenta (New - compatible con ACC)
+     */
+    async obtenerProyectosNew(accessToken: string, accountId: string, filters: Record<string, any> = {}): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            let url = `${baseUrl}/construction/admin/v1/accounts/${encodeURIComponent(accountId)}/projects`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyectos new: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene un proyecto específico por ID (Legacy)
+     */
+    async obtenerProyectoPorIdLegacy(accessToken: string, accountId: string, projectId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const url = this.buildBim360ProjectsUrl(accountId, region, projectId);
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region.toUpperCase();
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyecto legacy: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene un proyecto específico por ID (New - compatible con ACC)
+     */
+    async obtenerProyectoPorIdNew(accessToken: string, accountId: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/construction/admin/v1/accounts/${encodeURIComponent(accountId)}/projects/${encodeURIComponent(projectId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyecto new: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un proyecto BIM 360
+     */
+    async actualizarProyectoBim360(accessToken: string, accountId: string, projectId: string, updateData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const url = this.buildBim360ProjectsUrl(accountId, region, projectId);
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region.toUpperCase();
+            }
+
+            const response = await this.httpClient.patch<any>(url, updateData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar proyecto BIM 360: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza la imagen de un proyecto BIM 360
+     */
+    async actualizarImagenProyectoBim360(accessToken: string, accountId: string, projectId: string, imageData: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+            if (!imageData) {
+                throw new Error('Los datos de la imagen son requeridos');
+            }
+
+            const url = this.buildBim360ProjectsUrl(accountId, region, projectId, 'image');
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region.toUpperCase();
+            }
+
+            const response = await this.httpClient.patch<any>(url, { image: imageData }, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar imagen del proyecto BIM 360: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene el issueContainerId de un proyecto usando la Data Management API
+     */
+    async obtenerIssueContainerId(accessToken: string, accountId: string, projectId: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+
+            // Convertir accountId a hubId (agregar prefijo 'b.' si no lo tiene)
+            const hubId = accountId.startsWith('b.') ? accountId : `b.${accountId}`;
+
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
+            const url = `${baseUrl}/project/v1/hubs/${encodeURIComponent(hubId)}/projects/${encodeURIComponent(dataManagementProjectId)}`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            // Extraer el issueContainerId
+            const projectIdFromResponse = response.data?.data?.id || null;
+
+            if (!projectIdFromResponse) {
+                throw new Error('No se pudo obtener el ID del proyecto desde la respuesta');
+            }
+
+            // Remover el prefijo 'b.' si existe para obtener el containerId
+            const issueContainerId = projectIdFromResponse.startsWith('b.')
+                ? projectIdFromResponse.substring(2)
+                : projectIdFromResponse;
+
+            return {
+                issueContainerId,
+                projectId: projectIdFromResponse,
+                hubId,
+                projectData: response.data?.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener issue container ID: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 
 

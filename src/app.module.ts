@@ -26,6 +26,7 @@ import { CompaniesModule } from './presentation/modules/companies.module';
 import { AccAccountUsersModule } from './presentation/modules/acc-account-users.module';
 import { AccProjectUsersModule } from './presentation/modules/acc-project-users.module';
 import { BusinessUnitsModule } from './presentation/modules/business-units.module';
+import { Bim360ProjectsModule } from './presentation/modules/bim360-projects.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { BusinessUnitsModule } from './presentation/modules/business-units.modul
     AccAccountUsersModule,
     AccProjectUsersModule,
     BusinessUnitsModule,
+    Bim360ProjectsModule,
     UserModule,
     GeneralModule,
     EmpresaModule,
