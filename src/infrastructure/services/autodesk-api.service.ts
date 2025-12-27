@@ -1542,5 +1542,69 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== AUTODESK VIEWER API ====================
+
+    /**
+     * Obtiene el manifiesto de un archivo traducido
+     */
+    async obtenerManifiesto(urn: string): Promise<any> {
+        try {
+            if (!urn) {
+                throw new Error('URN es requerido');
+            }
+
+            // Obtener token 2-legged con scope viewables:read
+            const tokenData = await this.obtenerToken2Legged(['viewables:read']);
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/modelderivative/v2/designdata/${encodeURIComponent(urn)}/manifest`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${tokenData.access_token}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener manifiesto: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los metadatos de un modelo
+     */
+    async obtenerMetadatos(urn: string): Promise<any> {
+        try {
+            if (!urn) {
+                throw new Error('URN es requerido');
+            }
+
+            // Obtener token 2-legged con scope viewables:read
+            const tokenData = await this.obtenerToken2Legged(['viewables:read']);
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/modelderivative/v2/designdata/${encodeURIComponent(urn)}/metadata`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${tokenData.access_token}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener metadatos: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
 }
 

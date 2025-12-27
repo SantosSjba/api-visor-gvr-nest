@@ -17,6 +17,7 @@ import { DataManagementModule } from './presentation/modules/data-management.mod
 import { DataManagementFoldersModule } from './presentation/modules/data-management-folders.module';
 import { DataManagementProjectsModule } from './presentation/modules/data-management-projects.module';
 import { DataManagementItemsModule } from './presentation/modules/data-management-items.module';
+import { AccViewerModule } from './presentation/modules/acc-viewer.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { DataManagementItemsModule } from './presentation/modules/data-managemen
     DataManagementFoldersModule,
     DataManagementProjectsModule,
     DataManagementItemsModule,
+    AccViewerModule,
   ],
 })
 export class AppModule { }
