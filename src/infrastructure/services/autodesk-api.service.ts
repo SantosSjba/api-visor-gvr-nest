@@ -3200,6 +3200,742 @@ export class AutodeskApiService {
             );
         }
     }
+
+    // ==================== COMPANIES API ====================
+
+    /**
+     * Crea una nueva compañía
+     */
+    async crearCompany(accessToken: string, accountId: string, companyData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.post<any>(url, companyData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear compañía: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Importa múltiples compañías
+     */
+    async importarCompanies(accessToken: string, accountId: string, companies: any[], region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!companies || companies.length === 0) {
+                throw new Error('Debe proporcionar al menos una compañía para importar');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies/import`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.post<any>(url, { companies }, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al importar compañías: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las compañías de una cuenta
+     */
+    async obtenerCompanies(accessToken: string, accountId: string, params: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies`;
+
+            const queryParams: Record<string, string> = {};
+            if (params.limit) queryParams.limit = params.limit.toString();
+            if (params.offset) queryParams.offset = params.offset.toString();
+            if (params.filter) {
+                if (typeof params.filter === 'object') {
+                    for (const [key, value] of Object.entries(params.filter)) {
+                        queryParams[`filter[${key}]`] = String(value);
+                    }
+                } else {
+                    queryParams.filter = String(params.filter);
+                }
+            }
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data.results || response.data,
+                pagination: response.data.pagination || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener compañías: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene una compañía específica por ID
+     */
+    async obtenerCompanyPorId(accessToken: string, accountId: string, companyId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!companyId) {
+                throw new Error('El ID de la compañía es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies/${encodeURIComponent(companyId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener compañía: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca compañías
+     */
+    async buscarCompanies(accessToken: string, accountId: string, searchTerm: string, params: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!searchTerm) {
+                throw new Error('El término de búsqueda es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies/search`;
+
+            const queryParams: Record<string, string> = {
+                term: searchTerm,
+            };
+            if (params.limit) queryParams.limit = params.limit.toString();
+            if (params.offset) queryParams.offset = params.offset.toString();
+
+            url += '?' + new URLSearchParams(queryParams).toString();
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data.results || response.data,
+                pagination: response.data.pagination || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar compañías: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene las compañías de un proyecto
+     */
+    async obtenerCompaniesPorProyecto(accessToken: string, accountId: string, projectId: string, params: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/projects/${encodeURIComponent(projectId)}/companies`;
+
+            const queryParams: Record<string, string> = {};
+            if (params.limit) queryParams.limit = params.limit.toString();
+            if (params.offset) queryParams.offset = params.offset.toString();
+
+            if (Object.keys(queryParams).length > 0) {
+                url += '?' + new URLSearchParams(queryParams).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data.results || response.data,
+                pagination: response.data.pagination || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener compañías del proyecto: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza una compañía
+     */
+    async actualizarCompany(accessToken: string, accountId: string, companyId: string, updateData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!companyId) {
+                throw new Error('El ID de la compañía es requerido');
+            }
+            if (!updateData || Object.keys(updateData).length === 0) {
+                throw new Error('Debe proporcionar datos para actualizar');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies/${encodeURIComponent(companyId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.patch<any>(url, updateData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar compañía: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Sube una imagen para una compañía
+     */
+    async subirImagenCompany(accessToken: string, accountId: string, companyId: string, file: Express.Multer.File, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!companyId) {
+                throw new Error('El ID de la compañía es requerido');
+            }
+            if (!file) {
+                throw new Error('El archivo de imagen es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/companies/${encodeURIComponent(companyId)}/image`;
+
+            const FormData = require('form-data');
+            const formData = new FormData();
+
+            const extensionMap: Record<string, string> = {
+                'image/png': 'png',
+                'image/jpeg': 'jpg',
+                'image/jpg': 'jpg',
+                'image/bmp': 'bmp',
+                'image/gif': 'gif',
+            };
+            const ext = extensionMap[file.mimetype] || 'jpg';
+            const fileName = `company_image_${Date.now()}.${ext}`;
+
+            formData.append('file', file.buffer, {
+                filename: fileName,
+                contentType: file.mimetype,
+            });
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                ...formData.getHeaders(),
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.patch<any>(url, formData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al subir imagen de compañía: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    // ==================== ACCOUNT USERS API ====================
+
+    /**
+     * Crea un nuevo usuario en el directorio de miembros
+     */
+    async crearUsuario(accessToken: string, accountId: string, userData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userData.email) {
+                throw new Error('El email es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.post<any>(url, userData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al crear usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Importa múltiples usuarios
+     */
+    async importarUsuarios(accessToken: string, accountId: string, users: any[], region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!users || users.length === 0) {
+                throw new Error('Debe proporcionar al menos un usuario');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/import`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.post<any>(url, { users }, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al importar usuarios: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene todos los usuarios de una cuenta
+     */
+    async obtenerUsuarios(accessToken: string, accountId: string, filters: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener usuarios: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene un usuario específico por ID
+     */
+    async obtenerUsuarioPorId(accessToken: string, accountId: string, userId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userId) {
+                throw new Error('El ID del usuario es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/${encodeURIComponent(userId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los proyectos de un usuario
+     */
+    async obtenerProyectosUsuario(accessToken: string, accountId: string, userId: string, filters: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userId) {
+                throw new Error('El ID del usuario es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/${encodeURIComponent(userId)}/projects`;
+
+            if (Object.keys(filters).length > 0) {
+                url += '?' + new URLSearchParams(filters as any).toString();
+            }
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener proyectos del usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los productos de un usuario
+     */
+    async obtenerProductosUsuario(accessToken: string, accountId: string, userId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userId) {
+                throw new Error('El ID del usuario es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/${encodeURIComponent(userId)}/products`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener productos del usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Obtiene los roles de un usuario
+     */
+    async obtenerRolesUsuario(accessToken: string, accountId: string, userId: string, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userId) {
+                throw new Error('El ID del usuario es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/${encodeURIComponent(userId)}/roles`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener roles del usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Busca usuarios por nombre
+     */
+    async buscarUsuarios(accessToken: string, accountId: string, searchTerm: string, filters: Record<string, any> = {}, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!searchTerm) {
+                throw new Error('El término de búsqueda es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            let url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/search`;
+
+            const queryParams: Record<string, string> = {
+                name: searchTerm,
+            };
+            if (filters.limit) queryParams.limit = filters.limit.toString();
+            if (filters.offset) queryParams.offset = filters.offset.toString();
+            if (filters.operator) queryParams.operator = filters.operator;
+            if (filters.partial !== undefined) queryParams.partial = filters.partial.toString();
+
+            url += '?' + new URLSearchParams(queryParams).toString();
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.get<any>(url, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al buscar usuarios: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Actualiza un usuario
+     */
+    async actualizarUsuario(accessToken: string, accountId: string, userId: string, userData: Record<string, any>, region?: string): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!accountId) {
+                throw new Error('El ID de la cuenta es requerido');
+            }
+            if (!userId) {
+                throw new Error('El ID del usuario es requerido');
+            }
+
+            const hqBaseUrl = this.configService.get<string>('ACC_HQ_URL_BASE') || 'https://developer.api.autodesk.com/hq/v1';
+            const url = `${hqBaseUrl}/accounts/${encodeURIComponent(accountId)}/users/${encodeURIComponent(userId)}`;
+
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            };
+
+            if (region) {
+                headers['Region'] = region;
+            }
+
+            const response = await this.httpClient.patch<any>(url, userData, { headers });
+
+            return {
+                data: response.data,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al actualizar usuario: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
 }
 
 

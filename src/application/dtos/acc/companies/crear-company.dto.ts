@@ -1,0 +1,70 @@
+import { IsNotEmpty, IsString, IsOptional, IsIn, MaxLength } from 'class-validator';
+
+export class CrearCompanyDto {
+    @IsNotEmpty({ message: 'El nombre es requerido' })
+    @IsString()
+    @MaxLength(255)
+    name: string;
+
+    @IsNotEmpty({ message: 'El trade es requerido' })
+    @IsString()
+    trade: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    address_line_1?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    address_line_2?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    city?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    state_or_province?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    postal_code?: string;
+
+    @IsOptional()
+    @IsString()
+    country?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    phone?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    website_url?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    description?: string;
+
+    @IsOptional()
+    @IsString()
+    erp_id?: string;
+
+    @IsOptional()
+    @IsString()
+    tax_id?: string;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['US', 'EMEA'])
+    region?: string;
+}
+
