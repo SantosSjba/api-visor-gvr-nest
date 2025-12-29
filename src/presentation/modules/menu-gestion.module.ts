@@ -24,10 +24,12 @@ import { MenuGestionRepository } from '../../infrastructure/repositories/menu-ge
 import { MENU_GESTION_REPOSITORY } from '../../domain/repositories/menu-gestion.repository.interface';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { JwtStrategy } from '../../infrastructure/auth/jwt.strategy';
+import { BroadcastModule } from './broadcast.module';
 
 @Module({
     imports: [
         DatabaseModule,
+        BroadcastModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             imports: [ConfigModule],

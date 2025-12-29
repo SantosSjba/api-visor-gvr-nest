@@ -44,6 +44,7 @@ import { ReordenarMenuDto } from '../../application/dtos/menu-gestion/reordenar-
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
+import { BroadcastService } from '../../shared/services/broadcast.service';
 
 @Controller('menus')
 @UseGuards(JwtAuthGuard)
@@ -67,6 +68,7 @@ export class MenuGestionController {
         private readonly moverMenuUseCase: MoverMenuUseCase,
         private readonly reordenarMenuUseCase: ReordenarMenuUseCase,
         private readonly jwtService: JwtService,
+        private readonly broadcastService: BroadcastService,
     ) { }
 
     @Get('tree')
@@ -131,6 +133,12 @@ export class MenuGestionController {
         const payload = await this.jwtService.verifyAsync(token);
         const data = await this.crearMenuUseCase.execute(createDto, payload.sub);
 
+        // Obtener el menú completo para emitir el evento
+        const menuCompleto = await this.obtenerMenuUseCase.execute(data.id_menu);
+        
+        // Emitir evento de broadcasting
+        this.broadcastService.emitMenuCreated(menuCompleto);
+
         return ApiResponseDto.created(data, 'Menú creado exitosamente');
     }
 
@@ -194,6 +202,12 @@ export class MenuGestionController {
 
         const payload = await this.jwtService.verifyAsync(token);
         const data = await this.editarMenuUseCase.execute(id, updateDto, payload.sub);
+
+        // Obtener el menú completo para emitir el evento
+        const menuCompleto = await this.obtenerMenuUseCase.execute(id);
+        
+        // Emitir evento de broadcasting
+        this.broadcastService.emitMenuUpdated(menuCompleto);
 
         return ApiResponseDto.success(data, 'Menú actualizado exitosamente');
     }
@@ -270,6 +284,9 @@ export class MenuGestionController {
 
         const payload = await this.jwtService.verifyAsync(token);
         const data = await this.eliminarMenuUseCase.execute(id, payload.sub);
+
+        // Emitir evento de broadcasting
+        this.broadcastService.emitMenuDeleted(id);
 
         return ApiResponseDto.success(data, 'Menú eliminado exitosamente');
     }

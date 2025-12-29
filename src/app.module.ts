@@ -30,6 +30,7 @@ import { Bim360ProjectsModule } from './presentation/modules/bim360-projects.mod
 import { DataManagementBucketsModule } from './presentation/modules/data-management-buckets.module';
 import { AuditoriaModule } from './presentation/modules/auditoria.module';
 import { AccRecursosModule } from './presentation/modules/acc-recursos.module';
+import { BroadcastModule } from './presentation/modules/broadcast.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { AccRecursosModule } from './presentation/modules/acc-recursos.module';
     }),
     // Módulo de base de datos
     DatabaseModule,
+    // Módulo de broadcasting
+    BroadcastModule,
     // Módulos de funcionalidad
     AuthModule,
     AccModule,
