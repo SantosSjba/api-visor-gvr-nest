@@ -2,8 +2,30 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 
 export const getDatabaseConfig = (
-    configService: ConfigService,
-): TypeOrmModuleOptions => ({
+  configService: ConfigService,
+): TypeOrmModuleOptions => {
+  const databaseUrl = configService.get<string>('DATABASE_URL');
+  
+  if (databaseUrl) {
+    return {
+      type: 'postgres',
+      url: databaseUrl,
+      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+      synchronize: configService.get<boolean>('DB_SYNCHRONIZE') || false,
+      logging: configService.get<boolean>('DB_LOGGING') || false,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      extra: {
+        connectionTimeoutMillis: 10000,
+      },
+      retryAttempts: 5,
+      retryDelay: 3000,
+    };
+  }
+  
+  // Fallback a configuración individual
+  return {
     type: 'postgres',
     host: configService.get<string>('DB_HOST'),
     port: configService.get<number>('DB_PORT'),
@@ -11,18 +33,16 @@ export const getDatabaseConfig = (
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_DATABASE'),
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
-    logging: configService.get<boolean>('DB_LOGGING'),
+    synchronize: configService.get<boolean>('DB_SYNCHRONIZE') || false,
+    logging: configService.get<boolean>('DB_LOGGING') || false,
     ssl: {
-        rejectUnauthorized: false, // Necesario para Supabase
+      rejectUnauthorized: false,
     },
     extra: {
-        // Configuración adicional para mejorar la conexión
-        connectionTimeoutMillis: 10000, // 10 segundos de timeout
-        // Forzar IPv4 para evitar problemas de timeout con IPv6
-        family: 4,
+      connectionTimeoutMillis: 10000,
+      family: 4,
     },
-    // Configuración de reintentos
     retryAttempts: 5,
     retryDelay: 3000,
-});
+  };
+};
