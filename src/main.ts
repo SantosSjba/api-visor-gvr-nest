@@ -1,3 +1,10 @@
+import { webcrypto } from 'crypto';
+
+// Polyfill para crypto.randomUUID() - debe estar ANTES de cualquier otra importación de NestJS
+if (!globalThis.crypto) {
+  globalThis.crypto = webcrypto as any;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'express';
@@ -41,5 +48,3 @@ async function bootstrap() {
   console.log(`📊 Database: ${process.env.DB_HOST}`);
 }
 bootstrap();
-
-
