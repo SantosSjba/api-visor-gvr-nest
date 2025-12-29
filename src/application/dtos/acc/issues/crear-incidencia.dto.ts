@@ -18,8 +18,8 @@ class ViewerStateDto {
     viewport?: any;
 
     @IsOptional()
-    @IsObject()
-    objectSet?: any;
+    @IsArray()
+    objectSet?: any[];
 
     @IsOptional()
     @IsObject()

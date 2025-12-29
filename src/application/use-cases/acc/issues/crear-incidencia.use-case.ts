@@ -53,12 +53,14 @@ export class CrearIncidenciaUseCase {
 
                 const details: any = {};
 
-                if (dto.pushpinPosition && dto.pushpinPosition.x !== 0 && dto.pushpinPosition.y !== 0 && dto.pushpinPosition.z !== 0) {
-                    details.position = {
-                        x: parseFloat(dto.pushpinPosition.x.toString()),
-                        y: parseFloat(dto.pushpinPosition.y.toString()),
-                        z: parseFloat(dto.pushpinPosition.z.toString()),
-                    };
+                if (dto.pushpinPosition) {
+                    const x = parseFloat(dto.pushpinPosition.x.toString());
+                    const y = parseFloat(dto.pushpinPosition.y.toString());
+                    const z = parseFloat(dto.pushpinPosition.z.toString());
+
+                    if (!(x === 0 && y === 0 && z === 0)) {
+                        details.position = { x, y, z };
+                    }
                 }
 
                 if (dto.objectId !== null && dto.objectId !== undefined) {
@@ -112,7 +114,67 @@ export class CrearIncidenciaUseCase {
             }
         }
 
-        return await this.autodeskApiService.crearIncidencia(accessToken, projectId, accPayload);
+        // 1. Manejo de Miniatura (Thumbnail) - Subir a OSS antes de crear la incidencia
+        let thumbnailUrn: string | null = null;
+        let thumbnailFilename = 'issue_thumbnail.png';
+
+        if (dto.thumbnail && dto.thumbnail.startsWith('data:')) {
+            try {
+                // Extract content type and base64 data
+                const matches = dto.thumbnail.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+
+                if (matches && matches.length === 3) {
+                    const contentType = matches[1];
+                    const base64Data = matches[2];
+                    const buffer = Buffer.from(base64Data, 'base64');
+
+                    // Determine extension
+                    let extension = 'png';
+                    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
+                    else if (contentType.includes('gif')) extension = 'gif';
+                    else if (contentType.includes('webp')) extension = 'webp';
+
+                    thumbnailFilename = `issue_thumbnail.${extension}`;
+
+                    // Subir a S3 usando el helper en AutodeskApiService
+                    const uploadResult = await this.autodeskApiService.subirMiniaturaIssue(
+                        accessToken,
+                        projectId,
+                        buffer,
+                        thumbnailFilename,
+                        contentType
+                    );
+
+                    if (uploadResult.success && uploadResult.urn) {
+                        thumbnailUrn = uploadResult.urn;
+                    } else {
+                        console.warn('Error subiendo miniatura:', uploadResult.error);
+                    }
+                }
+            } catch (e) {
+                // Log error but continue creating the issue
+                console.error('Excepción al procesar miniatura:', e);
+            }
+        }
+
+        // 2. Crear Incidencia
+        const issue = await this.autodeskApiService.crearIncidencia(accessToken, projectId, accPayload);
+
+        // 3. Adjuntar Miniatura si existe
+        if (issue && issue.id && thumbnailUrn) {
+            try {
+                await this.autodeskApiService.crearAdjunto(accessToken, projectId, issue.id, {
+                    urn: thumbnailUrn,
+                    fileName: thumbnailFilename,
+                    name: 'Thumbnail',
+                    displayName: 'Thumbnail'
+                });
+            } catch (e) {
+                console.error('Error adjuntando miniatura a la incidencia:', e);
+            }
+        }
+
+        return issue;
     }
 
     private convertirDerivativeUrnALineageUrn(derivativeUrn: string): string | null {

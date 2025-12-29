@@ -13,9 +13,10 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
 
@@ -153,14 +154,18 @@ export class DataManagementItemsController {
         @Param('projectId') projectId: string,
         @Param('itemId') itemId: string,
         @Query() queryParams: any,
+        @Res() res: Response,
     ) {
         const user = (request as any).user;
         const resultado = await this.descargarItemUseCase.execute(user.sub, projectId, itemId, queryParams);
 
-        return ApiResponseDto.success(
-            resultado.data,
-            'URL de descarga obtenida exitosamente',
-        );
+        res.set({
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${resultado.fileName}"`,
+            'Content-Length': resultado.data.length,
+        });
+
+        res.send(resultado.data);
     }
 
     /**

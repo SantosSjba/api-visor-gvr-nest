@@ -15,10 +15,19 @@ import { SubirImagenProyectoUseCase } from '../../application/use-cases/acc/proj
 // Services
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
 import { HttpClientService } from '../../shared/services/http-client.service';
+import ObtenerTokenValidoHelper from '../../application/use-cases/acc/issues/obtener-token-valido.helper';
+
+// Repositories
+import { AccRepository } from '../../infrastructure/repositories/acc.repository';
+import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
+import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
 
 @Module({
     controllers: [AccProjectsController],
     providers: [
+        // Helpers
+        ObtenerTokenValidoHelper,
+
         // Use Cases
         GetProyectosUseCase,
         GetProyectoPorIdUseCase,
@@ -33,6 +42,13 @@ import { HttpClientService } from '../../shared/services/http-client.service';
         // Services
         AutodeskApiService,
         HttpClientService,
+
+        // Repositories
+        {
+            provide: ACC_REPOSITORY,
+            useClass: AccRepository,
+        },
+        DatabaseFunctionService,
     ],
 })
 export class AccProjectsModule { }

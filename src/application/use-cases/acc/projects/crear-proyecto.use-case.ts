@@ -1,14 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { CrearProyectoDto } from '../../../dtos/acc/projects/crear-proyecto.dto';
+import ObtenerTokenValidoHelper from '../issues/obtener-token-valido.helper';
 
 @Injectable()
 export class CrearProyectoUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
+        private readonly obtenerTokenValidoHelper: ObtenerTokenValidoHelper,
     ) { }
 
-    async execute(accountId: string, dto: CrearProyectoDto, userId?: string): Promise<any> {
+    async execute(accountId: string, dto: CrearProyectoDto, userId?: string | number): Promise<any> {
+        let accessToken = dto.token;
+
+        // Si tenemos un userId, intentamos obtener su token 3-legged
+        if (!accessToken && userId) {
+            try {
+                const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+                if (!isNaN(numericUserId)) {
+                    accessToken = await this.obtenerTokenValidoHelper.execute(numericUserId);
+                }
+            } catch (error) {
+                // Si falla el token 3-legged, continuará con el fallback 2-legged en el service
+                console.warn('No se pudo obtener token 3-legged para el usuario:', userId, error.message);
+            }
+        }
+
         const projectData: Record<string, any> = {
             name: dto.name,
             type: dto.type,
@@ -33,12 +50,20 @@ export class CrearProyectoUseCase {
         if (dto.currentPhase) projectData.currentPhase = dto.currentPhase;
         if (dto.businessUnitId) projectData.businessUnitId = dto.businessUnitId;
         if (dto.projectValue) projectData.projectValue = dto.projectValue;
+        if (dto.products) projectData.products = dto.products;
+
+        // Solo pasamos el userId al servicio si creemos que es un ID de Autodesk válido
+        // (por ejemplo, si no es numérico pequeño o si vino explícitamente en el request original)
+        let autodeskUserId: string | undefined = undefined;
+        if (typeof userId === 'string' && userId.length > 5) {
+            autodeskUserId = userId;
+        }
 
         return await this.autodeskApiService.createAccProject(
             accountId,
             projectData,
-            dto.token,
-            userId,
+            accessToken,
+            autodeskUserId,
         );
     }
 }

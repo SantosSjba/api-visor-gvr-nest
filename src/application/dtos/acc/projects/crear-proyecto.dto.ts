@@ -29,6 +29,9 @@ export class CrearProyectoDto {
     classification?: string;
 
     @IsOptional()
+    products?: any[];
+
+    @IsOptional()
     @IsDateString()
     startDate?: string;
 

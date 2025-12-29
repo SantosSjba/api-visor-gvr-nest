@@ -12,9 +12,9 @@ export class CrearComentarioUseCase {
 
     async execute(userId: number, projectId: string, issueId: string, dto: CrearComentarioDto): Promise<any> {
         const accessToken = await this.obtenerTokenValidoHelper.execute(userId);
-        
+
         const data = {
-            comment: dto.comment,
+            body: dto.body,
         };
 
         return await this.autodeskApiService.crearComentario(accessToken, projectId, issueId, data);

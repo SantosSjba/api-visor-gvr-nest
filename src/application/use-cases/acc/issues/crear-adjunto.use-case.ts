@@ -18,21 +18,39 @@ export class CrearAdjuntoUseCase {
     ): Promise<any> {
         const accessToken = await this.obtenerTokenValidoHelper.execute(userId);
 
-        if (!dto.urn && !file) {
-            throw new BadRequestException('Se requiere un archivo (file) o un URN (urn)');
+        let storageUrn = dto.urn;
+        let fileName = dto.fileName || dto.name || 'Attachment';
+
+        // Si hay archivo, subirlo primero
+        if (file) {
+            fileName = file.originalname;
+            const contentType = file.mimetype;
+
+            // Usar el helper existente (aunque diga miniatura, sirve para archivos en general)
+            const uploadResult = await this.autodeskApiService.subirMiniaturaIssue(
+                accessToken,
+                projectId,
+                file.buffer, // En memoria
+                fileName,
+                contentType
+            );
+
+            if (!uploadResult.success || !uploadResult.urn) {
+                throw new BadRequestException(`Error al subir el archivo: ${uploadResult.error || 'Error desconocido'}`);
+            }
+
+            storageUrn = uploadResult.urn;
         }
 
-        // Si hay archivo, necesitamos subirlo primero usando Data Management API
-        // Por ahora, asumimos que el URN ya viene en el DTO o se subió previamente
-        if (!dto.urn) {
-            throw new BadRequestException('El URN es requerido. Por favor, suba el archivo primero.');
+        if (!storageUrn) {
+            throw new BadRequestException('El URN es requerido. Por favor, suba el archivo o proporcione un URN.');
         }
 
         const attachmentData = {
-            urn: dto.urn,
-            name: dto.name || dto.displayName || 'Attachment',
-            fileName: dto.fileName || dto.name || 'Attachment',
-            type: dto.type || 'image',
+            urn: storageUrn,
+            name: dto.name || dto.displayName || fileName,
+            fileName: fileName,
+            type: dto.type || 'image', // 'image' is default but can be 'document' etc.
         };
 
         return await this.autodeskApiService.crearAdjunto(accessToken, projectId, dto.issueId, attachmentData);

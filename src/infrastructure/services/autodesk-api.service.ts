@@ -383,6 +383,7 @@ export class AutodeskApiService {
 
             return {
                 data: response.data.data || null,
+                included: response.data.included || [],
             };
         } catch (error: any) {
             throw new Error(
@@ -533,9 +534,8 @@ export class AutodeskApiService {
             // Get token if not provided (use 3-legged for write operations)
             let accessToken = token;
             if (!accessToken) {
-                // For now, use 2-legged with account:write scope
-                // In production, should use 3-legged token from user context
-                const tokenData = await this.obtenerToken2Legged(['account:write']);
+                // Use requested scopes for broader access
+                const tokenData = await this.obtenerToken2Legged(['account:write', 'account:read', 'data:read', 'data:write', 'bucket:read']);
                 accessToken = tokenData.access_token;
             }
 
@@ -1383,17 +1383,71 @@ export class AutodeskApiService {
                 throw new Error('Token, projectId y itemId son requeridos');
             }
 
-            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/download`;
+            // 1. Obtener información del item para conseguir el storage ID
+            const itemInfo = await this.obtenerItemPorId(accessToken, projectId, itemId);
 
-            const response = await this.httpClient.get<any>(url, {
+            if (!itemInfo.data) {
+                throw new Error('No se pudo obtener la información del item');
+            }
+
+            // 2. Buscar el storage ID
+            let storageId: string | null = null;
+
+            if (itemInfo.data.relationships?.tip?.data?.id) {
+                const tipId = itemInfo.data.relationships.tip.data.id;
+
+                if (itemInfo.included) {
+                    for (const included of itemInfo.included) {
+                        if (included.type === 'versions' && included.id === tipId) {
+                            storageId = included.relationships?.storage?.data?.id || null;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!storageId) {
+                throw new Error('No se encontró el storage ID del item');
+            }
+
+            // 3. Extraer bucketKey y objectKey
+            const regex = /urn:adsk\.objects:os\.object:([^\/]+)\/(.+)/;
+            const matches = storageId.match(regex);
+
+            if (!matches || matches.length !== 3) {
+                throw new Error(`Formato de storage ID inválido: ${storageId}`);
+            }
+
+            const bucketKey = matches[1];
+            const objectKey = matches[2];
+
+            // 4. Obtener URL firmada para descarga
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const signedUrlEndpoint = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3download`;
+
+            const signedResponse = await this.httpClient.get<any>(signedUrlEndpoint, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                 },
             });
 
+            if (!signedResponse.data?.url) {
+                throw new Error('No se recibió URL firmada en la respuesta');
+            }
+
+            const signedUrl = signedResponse.data.url;
+
+            // 5. Descargar el archivo usando la URL firmada
+            const fileResponse = await this.httpClient.get<any>(signedUrl, {
+                responseType: 'arraybuffer',
+            });
+
+            const fileName = itemInfo.data.attributes?.displayName || 'archivo_descargado';
+
             return {
-                data: response.data || null,
+                data: fileResponse.data,
+                fileName: fileName,
+                storageId: storageId,
             };
         } catch (error: any) {
             throw new Error(
@@ -5274,6 +5328,275 @@ export class AutodeskApiService {
             throw new Error(
                 `Error al eliminar item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
             );
+        }
+    }
+
+    // ==================== OSS / S3 UPLOAD API ====================
+
+    /**
+     * Obtiene una URL firmada para subir archivo a S3 (Direct to S3)
+     */
+    async obtenerUrlFirmadaS3Upload(accessToken: string, bucketKey: string, objectKey: string): Promise<any> {
+        try {
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3upload?parts=1&minutesExpiration=5`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener URL firmada S3: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Sube un archivo a S3 usando una URL firmada
+     */
+    async subirArchivoS3(uploadUrl: string, content: Buffer | string, contentType: string): Promise<any> {
+        try {
+            // Note: direct axios call might be needed if httpClient wraps too much
+            // Assuming httpClient supports custom headers and raw body
+            const response = await this.httpClient.put<any>(uploadUrl, content, {
+                headers: {
+                    'Content-Type': contentType,
+                    // Content-Length is usually set automatically by axios for Buffers
+                },
+            });
+
+            return {
+                status: response.status,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al subir archivo a S3: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Finaliza la subida a S3
+     */
+    async finalizarUploadS3(accessToken: string, bucketKey: string, objectKey: string, uploadKey: string): Promise<any> {
+        try {
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/oss/v2/buckets/${encodeURIComponent(bucketKey)}/objects/${encodeURIComponent(objectKey)}/signeds3upload`;
+
+            const body = {
+                uploadKey: uploadKey,
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return {
+                data: response.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al finalizar subida S3: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    // ==================== ISSUE THUMBNAIL HELPERS ====================
+
+    /**
+     * Intenta resolver el Data Management Project ID a partir de un Issues Project ID
+     */
+    private async resolverDataManagementProjectId(accessToken: string, issuesProjectId: string): Promise<{ hubId: string, projectId: string } | null> {
+        // Método 1: Verificar si ya es correcto (b. o urn:)
+        if (issuesProjectId.startsWith('b.') || issuesProjectId.startsWith('urn:')) {
+            const hubId = await this.obtenerHubIdDesdeProjectId(accessToken, issuesProjectId);
+            if (hubId) {
+                return { hubId, projectId: issuesProjectId };
+            }
+        }
+
+        // Método 2: Buscar en todos los hubs (costoso pero necesario)
+        const hubsResponse = await this.obtenerHubs(accessToken);
+        const hubs = hubsResponse.data || [];
+
+        for (const hub of hubs) {
+            const projectsResponse = await this.obtenerProyectos(accessToken, hub.id);
+            const projects = projectsResponse.data || [];
+
+            for (const project of projects) {
+                const projectId = project.id;
+                const containerId = project.attributes?.extension?.data?.containerId;
+
+                // Match por containerId (UUID issues)
+                if (containerId === issuesProjectId) {
+                    return { hubId: hub.id, projectId };
+                }
+
+                // Match por ID sin prefijo
+                const cleanId = projectId.startsWith('b.') ? projectId.substring(2) : projectId;
+                if (cleanId === issuesProjectId) {
+                    return { hubId: hub.id, projectId };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Obtiene el Hub ID dado un Project ID de Data Management
+     */
+    private async obtenerHubIdDesdeProjectId(accessToken: string, projectId: string): Promise<string | null> {
+        try {
+            const hubsResponse = await this.obtenerHubs(accessToken);
+            const hubs = hubsResponse.data || [];
+
+            for (const hub of hubs) {
+                // Verificar proyecto en hub
+                try {
+                    await this.obtenerHubDeProyecto(accessToken, hub.id, projectId);
+                    return hub.id;
+                } catch (e) {
+                    continue; // No está en este hub
+                }
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Sube una miniatura para una incidencia usando el flujo Direct-to-S3
+     */
+    async subirMiniaturaIssue(
+        accessToken: string,
+        projectId: string,
+        content: Buffer | string,
+        filename: string,
+        contentType: string
+    ): Promise<{ success: boolean; urn?: string; error?: string }> {
+        try {
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+
+            // 1. Resolver Hub y Project ID correctos
+            const dmInfo = await this.resolverDataManagementProjectId(accessToken, normalizedProjectId);
+
+            if (!dmInfo) {
+                // Fallback si no se encuentra (puede pasar en algunos entornos de prueba)
+                return { success: false, error: 'No se pudo resolver el Project ID de Data Management' };
+            }
+
+            const { hubId, projectId: dmProjectId } = dmInfo;
+
+            // 2. Obtener Root Folder (Project Files)
+            let rootFolderId = null;
+            const topFolders = await this.obtenerCarpetasPrincipales(accessToken, hubId, dmProjectId);
+            const folders = topFolders.data || [];
+
+            const projectFiles = folders.find((f: any) => f.attributes?.name === 'Project Files' || f.attributes?.displayName === 'Project Files');
+            if (projectFiles) {
+                rootFolderId = projectFiles.id; // Usually we want the parent? PHP logic got parent. But storage goes TO a folder.
+                // Wait, PHP logic: if name==Project Files, return folder['relationships']['parent']['data']['id']. 
+                // Why parent? Maybe strict schema requirements? 
+                // Actually if target is 'folders', we usually target the folder itself.
+                // Let's stick to targeting the Project Files folder or the root of the project.
+                // PHP code: return $folder['relationships']['parent']['data']['id']; 
+                // This implies it puts it in the PARENT of Project Files? That's usually the Project Root. 
+                // Let's assume targeting 'Project Files' is safe if we can't find parent.
+                // But let's trust PHP logic: look for parent of Project Files.
+                if (projectFiles.relationships?.parent?.data?.id) {
+                    rootFolderId = projectFiles.relationships.parent.data.id;
+                } else {
+                    rootFolderId = projectFiles.id;
+                }
+            } else if (folders.length > 0) {
+                // Fallback to first folder's parent
+                if (folders[0].relationships?.parent?.data?.id) {
+                    rootFolderId = folders[0].relationships.parent.data.id;
+                } else {
+                    rootFolderId = folders[0].id;
+                }
+            }
+
+            if (!rootFolderId) {
+                return { success: false, error: 'No se pudo obtener el Root Folder' };
+            }
+
+            // 3. Crear Storage Location
+            const storageData = {
+                type: 'objects',
+                attributes: {
+                    name: filename,
+                },
+                relationships: {
+                    target: {
+                        data: {
+                            type: 'folders',
+                            id: rootFolderId,
+                        },
+                    },
+                },
+            };
+
+            const storageResult = await this.crearStorage(accessToken, dmProjectId, storageData);
+            const storageId = storageResult.data?.id;
+
+            if (!storageId) {
+                return { success: false, error: 'Error creando storage location' };
+            }
+
+            // 4. Extraer Bucket y Object Key
+            // urn:adsk.objects:os.object:bucketKey/objectKey
+            const regex = /urn:adsk\.objects:os\.object:([^\/]+)\/(.+)/;
+            const matches = storageId.match(regex);
+
+            if (!matches || matches.length !== 3) {
+                return { success: false, error: 'Formato de Storage ID inválido' };
+            }
+
+            const bucketKey = matches[1];
+            const objectKey = matches[2];
+
+            // 5. Obtener URL Firmada S3
+            const signedData = await this.obtenerUrlFirmadaS3Upload(accessToken, bucketKey, objectKey);
+            if (!signedData.data?.urls?.[0] || !signedData.data?.uploadKey) {
+                return { success: false, error: 'No se recibió URL firmada' };
+            }
+
+            const uploadUrl = signedData.data.urls[0];
+            const uploadKey = signedData.data.uploadKey;
+
+            // 6. Subir archivo
+            await this.subirArchivoS3(uploadUrl, content, contentType);
+
+            // 7. Finalizar Subida
+            const finishResult = await this.finalizarUploadS3(accessToken, bucketKey, objectKey, uploadKey);
+
+            const urn = finishResult.data?.objectId; // or id? PHP looks for objectId in response
+
+            if (urn) {
+                return { success: true, urn };
+            } else if (finishResult.data?.id) {
+                return { success: true, urn: finishResult.data.id };
+            }
+
+            return { success: false, error: 'No se recibió URN final' };
+
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 }

@@ -23,6 +23,10 @@ export class CrearAdjuntoDto {
     @IsOptional()
     @IsString()
     type?: string;
+
+    @IsOptional()
+    @IsString()
+    fileType?: string;
 }
 
 

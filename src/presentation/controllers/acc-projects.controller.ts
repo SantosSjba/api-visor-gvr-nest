@@ -187,12 +187,13 @@ export class AccProjectsController {
         }
 
         const user = (request as any).user;
-        const userId = request.headers['user-id'] as string;
+        const internalUserId = user?.sub || user?.id;
+        const autodeskUserId = request.headers['user-id'] as string;
 
         const resultado = await this.crearProyectoUseCase.execute(
             accountId,
             dto,
-            userId,
+            autodeskUserId || internalUserId,
         );
 
         return ApiResponseDto.success(
@@ -217,12 +218,14 @@ export class AccProjectsController {
             throw new BadRequestException('El ID de la cuenta es requerido');
         }
 
-        const userId = request.headers['user-id'] as string;
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        const autodeskUserId = request.headers['user-id'] as string;
 
         const resultado = await this.clonarProyectoUseCase.execute(
             accountId,
             dto,
-            userId,
+            autodeskUserId || internalUserId,
         );
 
         return ApiResponseDto.success(
@@ -248,13 +251,15 @@ export class AccProjectsController {
             throw new BadRequestException('Account ID y Project ID son requeridos');
         }
 
-        const userId = request.headers['user-id'] as string;
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        const autodeskUserId = request.headers['user-id'] as string;
 
         const resultado = await this.actualizarProyectoUseCase.execute(
             accountId,
             projectId,
             dto,
-            userId,
+            autodeskUserId || internalUserId,
         );
 
         return ApiResponseDto.success(
