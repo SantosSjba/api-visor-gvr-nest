@@ -7,7 +7,6 @@ if (!globalThis.crypto) {
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
@@ -15,16 +14,15 @@ import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
 
   // Configurar validación global
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist: true, // Elimina propiedades no definidas en el DTO
+      forbidNonWhitelisted: true, // Lanza error si hay propiedades extra
+      transform: true, // Transforma los payloads a instancias de DTO
     }),
   );
 
@@ -34,23 +32,19 @@ async function bootstrap() {
   // Configurar filtro global de excepciones
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Configurar CORS abierto
+  // Configurar CORS
   app.enableCors({
-    origin: true,
+    origin: true, // En producción, especifica los orígenes permitidos
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-    exposedHeaders: ['Content-Length', 'Content-Type'],
-    maxAge: 86400,
   });
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  const port = configService.get<number>('PORT') || 4001;
-  const host = '0.0.0.0';
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
 
-  await app.listen(port, host);
+  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
+  console.log(`📊 Database: ${process.env.DB_HOST}`);
 }
-
 bootstrap();
