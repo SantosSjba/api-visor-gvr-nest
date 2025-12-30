@@ -20,9 +20,9 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Elimina propiedades no definidas en el DTO
-      forbidNonWhitelisted: true, // Lanza error si hay propiedades extra
-      transform: true, // Transforma los payloads a instancias de DTO
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
@@ -32,20 +32,36 @@ async function bootstrap() {
   // Configurar filtro global de excepciones
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Configurar CORS
+  // Configurar CORS para EasyPanel
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['*'];
+  
   app.enableCors({
-    origin: true, // En producción, especifica los orígenes permitidos
+    origin: allowedOrigins.includes('*') ? true : allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;
+  const host = '0.0.0.0';
 
-  await app.listen(port, '0.0.0.0');
+  await app.listen(port, host);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
-  console.log(`📊 Database: ${process.env.DATABASE_URL}`);
+  // Obtener la URL real del servidor
+  const server = app.getHttpServer();
+  const address = server.address();
+  const actualHost = typeof address === 'string' ? address : `${host}:${address.port}`;
+  
+  console.log(`🚀 Application is running on: ${actualHost}`);
+  console.log(`🌐 Access via: http://0.0.0.0:${port}/api`);
+  console.log(`📡 External URL: ${process.env.APP_URL || `http://localhost:${port}`}/api`);
+  console.log(`🔒 CORS Origins: ${allowedOrigins.join(', ')}`);
+  console.log(`📊 Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ Not configured'}`);
 }
+
 bootstrap();
