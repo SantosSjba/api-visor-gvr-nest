@@ -65,7 +65,7 @@ docker push tu-usuario/api-visor-gvr-nest:latest
    ```env
    # Requeridas
    NODE_ENV=production
-   PORT=3000
+   PORT=4001
    DB_HOST=tu-host-postgres
    DB_PORT=5432
    DB_USERNAME=tu-usuario
@@ -83,7 +83,7 @@ docker push tu-usuario/api-visor-gvr-nest:latest
    ```
 
 3. **Configuración de puerto**
-   - Puerto del contenedor: `3000`
+   - Puerto del contenedor: `4001`
    - Puerto expuesto: El que Easy Panel asigne (o el que configures)
 
 4. **Health Check** (opcional pero recomendado)
@@ -122,7 +122,7 @@ docker-compose down
 docker images | grep api-visor-gvr-nest
 
 # Ejecutar contenedor localmente
-docker run -p 3000:3000 --env-file .env tu-usuario/api-visor-gvr-nest:latest
+docker run -p 4001:4001 --env-file .env tu-usuario/api-visor-gvr-nest:latest
 
 # Ver logs del contenedor
 docker logs -f <container-id>

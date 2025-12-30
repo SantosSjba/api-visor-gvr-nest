@@ -7,10 +7,10 @@ services:
       dockerfile: Dockerfile
     container_name: api-visor-gvr-nest
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-4001}:4001"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=4001
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_USERNAME=${DB_USERNAME}
@@ -25,7 +25,7 @@ services:
       - APP_URL=${APP_URL:-}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
