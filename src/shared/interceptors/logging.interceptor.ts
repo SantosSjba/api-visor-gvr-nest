@@ -29,17 +29,17 @@ export class LoggingInterceptor implements NestInterceptor {
         // Log del body si existe (excepto passwords)
         if (body && Object.keys(body).length > 0) {
             const sanitizedBody = this.sanitizeBody(body);
-            this.logger.debug(`   Body: ${JSON.stringify(sanitizedBody)}`);
+            this.logger.log(`   Body: ${JSON.stringify(sanitizedBody)}`);
         }
 
         // Log de query params si existen
         if (query && Object.keys(query).length > 0) {
-            this.logger.debug(`   Query: ${JSON.stringify(query)}`);
+            this.logger.log(`   Query: ${JSON.stringify(query)}`);
         }
 
         // Log de params si existen
         if (params && Object.keys(params).length > 0) {
-            this.logger.debug(`   Params: ${JSON.stringify(params)}`);
+            this.logger.log(`   Params: ${JSON.stringify(params)}`);
         }
 
         return next.handle().pipe(
@@ -52,9 +52,9 @@ export class LoggingInterceptor implements NestInterceptor {
                     `${statusEmoji} ${method} ${url} - ${statusCode} - ${duration}ms`,
                 );
 
-                // Log de la respuesta (solo en modo debug)
+                // Log de la respuesta
                 if (data) {
-                    this.logger.debug(`   Response: ${JSON.stringify(data)}`);
+                    this.logger.log(`   Response: ${JSON.stringify(data)}`);
                 }
             }),
             catchError((error) => {
@@ -68,7 +68,7 @@ export class LoggingInterceptor implements NestInterceptor {
                 this.logger.error(`   Error: ${error.message}`);
 
                 if (error.stack) {
-                    this.logger.debug(`   Stack: ${error.stack}`);
+                    this.logger.log(`   Stack: ${error.stack}`);
                 }
 
                 throw error;

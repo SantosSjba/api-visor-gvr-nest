@@ -6,14 +6,17 @@ if (!globalThis.crypto) {
 }
 
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
+  const logger = new Logger('Main.ts');
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Configurar validación global
   app.use(json({ limit: '50mb' }));
@@ -21,7 +24,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Elimina propiedades no definidas en el DTO
-      forbidNonWhitelisted: true, // Lanza error si hay propiedades extra
+      forbidNonWhitelisted: false, // Cambiado a false para compatibilidad con Easy Panel
       transform: true, // Transforma los payloads a instancias de DTO
     }),
   );
@@ -33,18 +36,21 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Configurar CORS
+  const frontendUrls = configService.get<string>('FRONTEND_URLS');
   app.enableCors({
-    origin: true, // En producción, especifica los orígenes permitidos
+    origin: frontendUrls ? frontendUrls.split(',') : true, // Soporta múltiples URLs separadas por coma
+    methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
     credentials: true,
   });
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const port = configService.get<number>('PORT') || 3000;
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
-  console.log(`📊 Database: ${process.env.DB_HOST}`);
+  logger.log(`🚀 Application is running on: http://0.0.0.0:${port}/api`);
+  logger.log(`📊 Database: ${configService.get<string>('DB_HOST')}`);
 }
 bootstrap();
