@@ -7,16 +7,16 @@ if (!globalThis.crypto) {
 
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { envs } from './config';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Main.ts');
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
 
   // Configurar validación global
   app.use(json({ limit: '50mb' }));
@@ -24,7 +24,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Elimina propiedades no definidas en el DTO
-      forbidNonWhitelisted: false, // Cambiado a false para compatibilidad con Easy Panel
+      forbidNonWhitelisted: true, // Lanza error si hay propiedades extra
       transform: true, // Transforma los payloads a instancias de DTO
     }),
   );
@@ -36,21 +36,30 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Configurar CORS
-  const frontendUrls = configService.get<string>('FRONTEND_URLS');
   app.enableCors({
-    origin: frontendUrls ? frontendUrls.split(',') : true, // Soporta múltiples URLs separadas por coma
+    origin: envs.frontendUrls, // <- toma del .env
     methods: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
+    allowedHeaders: 'Content-Type, Authorization, X-Requested-With',
+    exposedHeaders: 'Authorization',
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port, '0.0.0.0');
-
-  logger.log(`🚀 Application is running on: http://0.0.0.0:${port}/api`);
-  logger.log(`📊 Database: ${configService.get<string>('DB_HOST')}`);
+  await app.listen(envs.port || 4001, '0.0.0.0');
+  
+  // Verificar estado de la base de datos
+  try {
+    const dataSource = app.get(DataSource);
+    const isConnected = dataSource.isInitialized;
+    logger.log(`📊 Database: ${isConnected ? '✅ Connected' : '❌ Not connected'}`);
+  } catch (error) {
+    logger.log(`📊 Database: ❌ Connection check failed`);
+  }
+  
+  logger.log(`🚀 Application is running on: http://0.0.0.0:${envs.port || 4001}/api`);
 }
 bootstrap();

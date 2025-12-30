@@ -147,3 +147,12 @@ docker exec -it <container-id> sh
 - Configura `ALLOWED_ORIGINS` con los dominios correctos
 - No uses `*` en producción
 
+## Comandos para crear y subir imagen a Docker
+
+# 1. Construir nueva imagen
+docker build -t tuusuario/mi-proyecto-nestjs:latest .
+docker build -t santossjba/visor-gvr:latest .
+
+# 2. Subir a Docker Hub
+docker push tuusuario/mi-proyecto-nestjs:latest
+docker push santossjba/visor-gvr:latest
