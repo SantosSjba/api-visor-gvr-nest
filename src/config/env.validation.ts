@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsInt, IsBoolean, IsEnum, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum Environment {
@@ -48,6 +48,11 @@ export class EnvironmentVariables {
 
   @IsString()
   AUTODESK_CALLBACK_URL: string;
+
+  // Frontend URLs (opcional)
+  @IsOptional()
+  @IsString()
+  FRONTEND_URLS?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

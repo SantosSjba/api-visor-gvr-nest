@@ -7,6 +7,7 @@ if (!globalThis.crypto) {
 
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
@@ -14,6 +15,7 @@ import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Configurar validación global
   app.use(json({ limit: '50mb' }));
@@ -32,36 +34,23 @@ async function bootstrap() {
   // Configurar filtro global de excepciones
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Configurar CORS para EasyPanel
-  const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
-    : ['*'];
-  
+  // Configurar CORS abierto
   app.enableCors({
-    origin: allowedOrigins.includes('*') ? true : allowedOrigins,
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'Content-Type'],
+    maxAge: 86400,
   });
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT || 4001;
+  const port = configService.get<number>('PORT') || 4001;
   const host = '0.0.0.0';
 
   await app.listen(port, host);
-
-  // Obtener la URL real del servidor
-  const server = app.getHttpServer();
-  const address = server.address();
-  const actualHost = typeof address === 'string' ? address : `${host}:${address.port}`;
-  
-  console.log(`🚀 Application is running on: ${actualHost}`);
-  console.log(`🌐 Access via: http://0.0.0.0:${port}/api`);
-  console.log(`📡 External URL: ${process.env.APP_URL || `http://localhost:${port}`}/api`);
-  console.log(`🔒 CORS Origins: ${allowedOrigins.join(', ')}`);
-  console.log(`📊 Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ Not configured'}`);
 }
 
 bootstrap();
