@@ -31,6 +31,7 @@ import { DataManagementBucketsModule } from './presentation/modules/data-managem
 import { AuditoriaModule } from './presentation/modules/auditoria.module';
 import { AccRecursosModule } from './presentation/modules/acc-recursos.module';
 import { BroadcastModule } from './presentation/modules/broadcast.module';
+import { HealthModule } from './presentation/modules/health.module';
 
 @Module({
   imports: [
@@ -44,6 +45,8 @@ import { BroadcastModule } from './presentation/modules/broadcast.module';
     DatabaseModule,
     // Módulo de broadcasting
     BroadcastModule,
+    // Módulo de health check
+    HealthModule,
     // Módulos de funcionalidad
     AuthModule,
     AccModule,
