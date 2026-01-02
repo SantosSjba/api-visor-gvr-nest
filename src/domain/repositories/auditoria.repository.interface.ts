@@ -13,6 +13,8 @@ export interface IAuditoriaRepository {
 
     obtenerHistorialEntidad(entidad: string, identidad: string): Promise<any[]>;
 
+    obtenerAuditoriaPorMetadatos(entidad: string, accion: string, metadatoKey: string, metadatoValue: string): Promise<any | null>;
+
     obtenerHistorialUsuario(idUsuario: number, limit: number, offset: number): Promise<any[]>;
 
     obtenerEstadisticas(fechaDesde: string | null, fechaHasta: string | null): Promise<any | null>;

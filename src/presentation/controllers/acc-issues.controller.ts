@@ -19,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
+import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
 
 // Use Cases
 import { ObtenerPerfilUsuarioUseCase } from '../../application/use-cases/acc/issues/obtener-perfil-usuario.use-case';
@@ -524,7 +525,23 @@ export class AccIssuesController {
             throw new BadRequestException('User ID es requerido');
         }
 
-        const resultado = await this.crearComentarioUseCase.execute(userId, projectId, issueId, dto);
+        // Extraer información del request para auditoría
+        const requestInfo = RequestInfoHelper.extract(request);
+        
+        // Asegurar que usamos el userId validado, no el del helper (que puede ser 0)
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        const resultado = await this.crearComentarioUseCase.execute(
+            userIdNumero,
+            projectId,
+            issueId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+        );
 
         return ApiResponseDto.created(
             resultado,

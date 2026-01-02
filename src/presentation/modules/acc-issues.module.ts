@@ -27,6 +27,8 @@ import { HttpClientService } from '../../shared/services/http-client.service';
 // Repositories
 import { AccRepository } from '../../infrastructure/repositories/acc.repository';
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
+import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
+import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
 
 @Module({
@@ -61,6 +63,10 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         {
             provide: ACC_REPOSITORY,
             useClass: AccRepository,
+        },
+        {
+            provide: AUDITORIA_REPOSITORY,
+            useClass: AuditoriaRepository,
         },
         DatabaseFunctionService,
     ],
