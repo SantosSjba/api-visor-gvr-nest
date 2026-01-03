@@ -393,7 +393,28 @@ export class AccIssuesController {
             throw new BadRequestException('User ID es requerido');
         }
 
-        const resultado = await this.crearIncidenciaUseCase.execute(userId, projectId, dto);
+        // Extraer información del request para auditoría
+        const requestInfo = RequestInfoHelper.extract(request);
+        
+        // Asegurar que usamos el userId validado
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        // Obtener el rol del usuario (primer rol si tiene múltiples)
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.crearIncidenciaUseCase.execute(
+            userIdNumero,
+            projectId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.created(
             resultado,
@@ -454,7 +475,29 @@ export class AccIssuesController {
             throw new BadRequestException('User ID es requerido');
         }
 
-        const resultado = await this.actualizarIncidenciaUseCase.execute(userId, projectId, issueId, dto);
+        // Extraer información del request para auditoría
+        const requestInfo = RequestInfoHelper.extract(request);
+        
+        // Asegurar que usamos el userId validado
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        // Obtener el rol del usuario (primer rol si tiene múltiples)
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.actualizarIncidenciaUseCase.execute(
+            userIdNumero,
+            projectId,
+            issueId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.success(
             resultado,

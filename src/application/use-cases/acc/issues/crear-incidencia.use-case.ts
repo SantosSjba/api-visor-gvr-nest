@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { CrearIncidenciaDto } from '../../../dtos/acc/issues/crear-incidencia.dto';
+import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
 import ObtenerTokenValidoHelper from './obtener-token-valido.helper';
 
 @Injectable()
@@ -8,9 +9,18 @@ export class CrearIncidenciaUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
         private readonly obtenerTokenValidoHelper: ObtenerTokenValidoHelper,
+        @Inject(AUDITORIA_REPOSITORY)
+        private readonly auditoriaRepository: IAuditoriaRepository,
     ) { }
 
-    async execute(userId: number, projectId: string, dto: CrearIncidenciaDto): Promise<any> {
+    async execute(
+        userId: number,
+        projectId: string,
+        dto: CrearIncidenciaDto,
+        ipAddress?: string,
+        userAgent?: string,
+        userRole?: string,
+    ): Promise<any> {
         const accessToken = await this.obtenerTokenValidoHelper.execute(userId);
 
         // Transformar payload para ACC (similar a Laravel)
@@ -171,6 +181,36 @@ export class CrearIncidenciaUseCase {
                 });
             } catch (e) {
                 console.error('Error adjuntando miniatura a la incidencia:', e);
+            }
+        }
+
+        // 4. Registrar auditoría si la incidencia se creó exitosamente
+        const issueId = issue?.id;
+        if (issue && issueId && ipAddress && userAgent) {
+            try {
+                await this.auditoriaRepository.registrarAccion(
+                    userId,
+                    'ISSUE_CREATE',
+                    'issue',
+                    null, // No usar el ID de ACC como identidad porque es string
+                    `Incidencia creada: ${dto.title.substring(0, 100)}`,
+                    null,
+                    {
+                        issueId,
+                        projectId,
+                        title: dto.title.substring(0, 100),
+                        status: dto.status || 'open',
+                    },
+                    ipAddress,
+                    userAgent,
+                    {
+                        projectId,
+                        accIssueId: issueId, // ID de la incidencia de ACC (string/UUID)
+                        rol: userRole || null, // Rol del usuario al momento de crear la incidencia
+                    },
+                );
+            } catch (error) {
+                // No fallar la operación si la auditoría falla
             }
         }
 
