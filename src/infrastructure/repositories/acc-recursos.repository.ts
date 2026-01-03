@@ -14,11 +14,11 @@ export class AccRecursosRepository implements IAccRecursosRepository {
         recursoUrn: string | null,
         projectId: string | null,
         parentId: string | null,
-        idUsuarioCreador: number,
+        idUsuarioCreador: number | null,
         idUsuarioAsignado: number | null,
         nombre: string | null,
         descripcion: string | null,
-        estado: string | null,
+        estadoRecurso: string | null,
         metadatos: any,
         idUsuarioCreacion: number,
     ): Promise<any> {
@@ -34,13 +34,21 @@ export class AccRecursosRepository implements IAccRecursosRepository {
                 idUsuarioAsignado,
                 nombre,
                 descripcion,
-                estado,
-                JSON.stringify(metadatos),
+                estadoRecurso,
+                metadatos,
                 idUsuarioCreacion,
             ],
         );
 
-        return result || null;
+        if (!result) {
+            return null;
+        }
+
+        // La función retorna una tabla con success, message, id
+        // Extraer el primer resultado
+        const jsonbResult = result.accguardarrecurso || result.accGuardarRecurso || result;
+
+        return jsonbResult;
     }
 
     async obtenerRecurso(recursoTipo: string, recursoId: string): Promise<any | null> {
@@ -49,7 +57,19 @@ export class AccRecursosRepository implements IAccRecursosRepository {
             [recursoTipo, recursoId],
         );
 
-        return result || null;
+        if (!result) {
+            return null;
+        }
+
+        // La función retorna un JSONB directamente, necesitamos extraerlo
+        const jsonbResult = result.accobtenerrecurso || result.accObtenerRecurso || result;
+
+        // Si el resultado tiene success: false, retornar null
+        if (jsonbResult && jsonbResult.success === false) {
+            return null;
+        }
+
+        return jsonbResult;
     }
 
     async actualizarRecurso(
@@ -57,7 +77,7 @@ export class AccRecursosRepository implements IAccRecursosRepository {
         recursoId: string,
         idUsuarioAsignado: number | null,
         idUsuarioModifico: number | null,
-        estado: string | null,
+        estadoRecurso: string | null,
         metadatos: any | null,
         idUsuarioModificacion: number,
     ): Promise<any> {
@@ -68,13 +88,70 @@ export class AccRecursosRepository implements IAccRecursosRepository {
                 recursoId,
                 idUsuarioAsignado,
                 idUsuarioModifico,
-                estado,
-                metadatos ? JSON.stringify(metadatos) : null,
+                estadoRecurso,
+                metadatos,
                 idUsuarioModificacion,
             ],
         );
 
-        return result || null;
+        if (!result) {
+            return null;
+        }
+
+        // La función retorna una tabla con success, message
+        const jsonbResult = result.accactualizarrecurso || result.accActualizarRecurso || result;
+
+        return jsonbResult;
+    }
+
+    async obtenerRecursosPorProyecto(
+        projectId: string,
+        recursoTipo: string | null,
+        limit: number,
+        offset: number,
+    ): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accObtenerRecursosPorProyecto',
+            [projectId, recursoTipo, limit, offset],
+        );
+
+        if (!result) {
+            return { data: [], total_registros: 0 };
+        }
+
+        // La función retorna un JSONB directamente
+        const jsonbResult = result.accobtenerrecursosporproyecto || result.accObtenerRecursosPorProyecto || result;
+
+        return jsonbResult || { data: [], total_registros: 0 };
+    }
+
+    async obtenerRecursosHijos(
+        parentId: string,
+        recursoTipo: string | null,
+    ): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accObtenerRecursosHijos',
+            [parentId, recursoTipo],
+        );
+
+        if (!result) {
+            return [];
+        }
+
+        // La función retorna un JSONB directamente
+        const jsonbResult = result.accobtenerrecursoshijos || result.accObtenerRecursosHijos || result;
+
+        // Si es un array, retornarlo directamente
+        if (Array.isArray(jsonbResult)) {
+            return jsonbResult;
+        }
+
+        // Si tiene una propiedad data, retornarla
+        if (jsonbResult && jsonbResult.data) {
+            return jsonbResult.data;
+        }
+
+        return [];
     }
 
     async obtenerRecursosUsuario(
@@ -83,36 +160,32 @@ export class AccRecursosRepository implements IAccRecursosRepository {
         rol: string,
         limit: number,
         offset: number,
-    ): Promise<any[]> {
-        const result = await this.databaseFunctionService.callFunction<any>(
+    ): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
             'accObtenerRecursosUsuario',
             [idUsuario, recursoTipo, rol, limit, offset],
         );
 
-        return result || [];
-    }
+        if (!result) {
+            return { data: [], total_registros: 0 };
+        }
 
-    async obtenerRecursosPorProyecto(
-        projectId: string,
-        recursoTipo: string | null,
-        limit: number,
-        offset: number,
-    ): Promise<any[]> {
-        const result = await this.databaseFunctionService.callFunction<any>(
-            'accObtenerRecursosPorProyecto',
-            [projectId, recursoTipo, limit, offset],
-        );
+        // La función retorna un JSONB directamente
+        const jsonbResult = result.accobtenerrecursosusuario || result.accObtenerRecursosUsuario || result;
 
-        return result || [];
-    }
+        // Si tiene estructura con data y total_registros, retornarla
+        if (jsonbResult && jsonbResult.data !== undefined) {
+            return jsonbResult;
+        }
 
-    async obtenerRecursosHijos(parentId: string, recursoTipo: string | null): Promise<any[]> {
-        const result = await this.databaseFunctionService.callFunction<any>(
-            'accObtenerRecursosHijos',
-            [parentId, recursoTipo],
-        );
+        // Si es un array, convertirlo a formato esperado
+        if (Array.isArray(jsonbResult)) {
+            return {
+                data: jsonbResult,
+                total_registros: jsonbResult.length,
+            };
+        }
 
-        return result || [];
+        return { data: [], total_registros: 0 };
     }
 }
-

@@ -38,6 +38,8 @@ import { CrearComentarioUseCase } from '../../application/use-cases/acc/issues/c
 import { CrearAdjuntoUseCase } from '../../application/use-cases/acc/issues/crear-adjunto.use-case';
 import { ObtenerAdjuntosUseCase } from '../../application/use-cases/acc/issues/obtener-adjuntos.use-case';
 import { EliminarAdjuntoUseCase } from '../../application/use-cases/acc/issues/eliminar-adjunto.use-case';
+import { AsignarIncidenciaUseCase } from '../../application/use-cases/acc/issues/asignar-incidencia.use-case';
+import { ObtenerUsuariosDisponiblesUseCase } from '../../application/use-cases/acc/issues/obtener-usuarios-disponibles.use-case';
 
 // DTOs
 import { ObtenerTiposIncidenciasDto } from '../../application/dtos/acc/issues/obtener-tipos-incidencias.dto';
@@ -53,6 +55,7 @@ import { ObtenerComentariosDto } from '../../application/dtos/acc/issues/obtener
 import { CrearComentarioDto } from '../../application/dtos/acc/issues/crear-comentario.dto';
 import { CrearAdjuntoDto } from '../../application/dtos/acc/issues/crear-adjunto.dto';
 import { ObtenerAdjuntosDto } from '../../application/dtos/acc/issues/obtener-adjuntos.dto';
+import { AsignarIncidenciaDto } from '../../application/dtos/acc/issues/asignar-incidencia.dto';
 
 @Controller('acc/projects/:projectId')
 export class AccIssuesController {
@@ -73,6 +76,8 @@ export class AccIssuesController {
         private readonly crearAdjuntoUseCase: CrearAdjuntoUseCase,
         private readonly obtenerAdjuntosUseCase: ObtenerAdjuntosUseCase,
         private readonly eliminarAdjuntoUseCase: EliminarAdjuntoUseCase,
+        private readonly asignarIncidenciaUseCase: AsignarIncidenciaUseCase,
+        private readonly obtenerUsuariosDisponiblesUseCase: ObtenerUsuariosDisponiblesUseCase,
     ) { }
 
     /**
@@ -724,6 +729,90 @@ export class AccIssuesController {
         return ApiResponseDto.success(
             null,
             resultado.message || 'Adjunto eliminado exitosamente',
+        );
+    }
+
+    /**
+     * POST - Asignar/Desasignar incidencia a usuario
+     * POST /acc/projects/:projectId/issues/assign
+     */
+    @Post('issues/assign')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async asignarIncidencia(
+        @Param('projectId') projectId: string,
+        @Body() dto: AsignarIncidenciaDto,
+        @Req() request: Request,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        if (!dto.issueId) {
+            throw new BadRequestException('El Issue ID es requerido');
+        }
+
+        const user = (request as any).user;
+        const userId = user?.sub || user?.id;
+        if (!userId) {
+            throw new BadRequestException('User ID es requerido');
+        }
+
+        // Extraer información del request para auditoría
+        const requestInfo = RequestInfoHelper.extract(request);
+        
+        // Asegurar que usamos el userId validado
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        // Obtener el rol del usuario (primer rol si tiene múltiples)
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.asignarIncidenciaUseCase.execute(
+            userIdNumero,
+            projectId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
+
+        return ApiResponseDto.success(
+            resultado.data,
+            resultado.message,
+        );
+    }
+
+    /**
+     * GET - Obtener usuarios disponibles para asignar
+     * GET /acc/projects/:projectId/users/available
+     */
+    @Get('users/available')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async obtenerUsuariosDisponibles(
+        @Param('projectId') projectId: string,
+        @Query('busqueda') busqueda?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        const resultado = await this.obtenerUsuariosDisponiblesUseCase.execute(
+            busqueda,
+            limit ? parseInt(limit, 10) : undefined,
+            offset ? parseInt(offset, 10) : undefined,
+        );
+
+        return ApiResponseDto.success(
+            resultado,
+            'Usuarios obtenidos exitosamente',
         );
     }
 }

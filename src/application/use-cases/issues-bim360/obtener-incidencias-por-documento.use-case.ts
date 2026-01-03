@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../infrastructure/services/autodesk-api.service';
 import { ObtenerIncidenciasPorDocumentoDto } from '../../dtos/issues-bim360/obtener-incidencias-por-documento.dto';
 import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../domain/repositories/auditoria.repository.interface';
+import { ACC_RECURSOS_REPOSITORY, type IAccRecursosRepository } from '../../../domain/repositories/acc-recursos.repository.interface';
 import ObtenerTokenValidoHelper from '../acc/issues/obtener-token-valido.helper';
 
 @Injectable()
@@ -11,6 +12,8 @@ export class ObtenerIncidenciasPorDocumentoBim360UseCase {
         private readonly obtenerTokenValidoHelper: ObtenerTokenValidoHelper,
         @Inject(AUDITORIA_REPOSITORY)
         private readonly auditoriaRepository: IAuditoriaRepository,
+        @Inject(ACC_RECURSOS_REPOSITORY)
+        private readonly accRecursosRepository: IAccRecursosRepository,
     ) { }
 
     async execute(userId: number, projectId: string, dto: ObtenerIncidenciasPorDocumentoDto): Promise<any> {
@@ -57,18 +60,33 @@ export class ObtenerIncidenciasPorDocumentoBim360UseCase {
                                 issue.id,
                             );
 
+                            // Buscar asignación de la incidencia
+                            const recursoAsignacion = await this.accRecursosRepository.obtenerRecurso('issue', issue.id);
+
+                            let issueEnriquecida: any = { ...issue };
+
+                            // Agregar información del creador real
                             if (registroCreacion && registroCreacion.usuario) {
-                                return {
-                                    ...issue,
+                                issueEnriquecida = {
+                                    ...issueEnriquecida,
                                     createdByReal: registroCreacion.usuario,
                                     createdByRealId: registroCreacion.idusuario,
                                     createdByRealRole: registroCreacion.rol || null,
-                                    // Mantener createdBy original de ACC para referencia
                                     createdByAcc: issue.createdBy,
                                 };
                             }
 
-                            return issue;
+                            // Agregar información del usuario asignado
+                            if (recursoAsignacion && recursoAsignacion.idusuario_asignado) {
+                                issueEnriquecida = {
+                                    ...issueEnriquecida,
+                                    assignedToReal: recursoAsignacion.usuario_asignado,
+                                    assignedToRealId: recursoAsignacion.idusuario_asignado,
+                                    assignedToRealRole: recursoAsignacion.rol_asignado || null,
+                                };
+                            }
+
+                            return issueEnriquecida;
                         } catch (error) {
                             // Si falla la búsqueda de auditoría, retornar incidencia original
                             return issue;

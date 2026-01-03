@@ -18,6 +18,8 @@ import { CrearComentarioUseCase } from '../../application/use-cases/acc/issues/c
 import { CrearAdjuntoUseCase } from '../../application/use-cases/acc/issues/crear-adjunto.use-case';
 import { ObtenerAdjuntosUseCase } from '../../application/use-cases/acc/issues/obtener-adjuntos.use-case';
 import { EliminarAdjuntoUseCase } from '../../application/use-cases/acc/issues/eliminar-adjunto.use-case';
+import { AsignarIncidenciaUseCase } from '../../application/use-cases/acc/issues/asignar-incidencia.use-case';
+import { ObtenerUsuariosDisponiblesUseCase } from '../../application/use-cases/acc/issues/obtener-usuarios-disponibles.use-case';
 import ObtenerTokenValidoHelper from '../../application/use-cases/acc/issues/obtener-token-valido.helper';
 
 // Services
@@ -29,6 +31,10 @@ import { AccRepository } from '../../infrastructure/repositories/acc.repository'
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.repository.interface';
+import { AccRecursosRepository } from '../../infrastructure/repositories/acc-recursos.repository';
+import { ACC_RECURSOS_REPOSITORY } from '../../domain/repositories/acc-recursos.repository.interface';
+import { UsuariosRepository } from '../../infrastructure/repositories/usuarios.repository';
+import { USUARIOS_REPOSITORY } from '../../domain/repositories/usuarios.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
 
 @Module({
@@ -54,6 +60,8 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         CrearAdjuntoUseCase,
         ObtenerAdjuntosUseCase,
         EliminarAdjuntoUseCase,
+        AsignarIncidenciaUseCase,
+        ObtenerUsuariosDisponiblesUseCase,
 
         // Services
         AutodeskApiService,
@@ -67,6 +75,14 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         {
             provide: AUDITORIA_REPOSITORY,
             useClass: AuditoriaRepository,
+        },
+        {
+            provide: ACC_RECURSOS_REPOSITORY,
+            useClass: AccRecursosRepository,
+        },
+        {
+            provide: USUARIOS_REPOSITORY,
+            useClass: UsuariosRepository,
         },
         DatabaseFunctionService,
     ],

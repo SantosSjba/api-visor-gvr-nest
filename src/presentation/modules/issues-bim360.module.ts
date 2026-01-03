@@ -28,6 +28,8 @@ import { AccRepository } from '../../infrastructure/repositories/acc.repository'
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.repository.interface';
+import { AccRecursosRepository } from '../../infrastructure/repositories/acc-recursos.repository';
+import { ACC_RECURSOS_REPOSITORY } from '../../domain/repositories/acc-recursos.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
 
 @Module({
@@ -65,6 +67,10 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         {
             provide: AUDITORIA_REPOSITORY,
             useClass: AuditoriaRepository,
+        },
+        {
+            provide: ACC_RECURSOS_REPOSITORY,
+            useClass: AccRecursosRepository,
         },
         DatabaseFunctionService,
     ],
