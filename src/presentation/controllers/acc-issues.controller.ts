@@ -583,7 +583,29 @@ export class AccIssuesController {
             throw new BadRequestException('User ID es requerido');
         }
 
-        const resultado = await this.crearAdjuntoUseCase.execute(userId, projectId, dto, file);
+        // Extraer información del request para auditoría
+        const requestInfo = RequestInfoHelper.extract(request);
+        
+        // Asegurar que usamos el userId validado, no el del helper (que puede ser 0)
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        // Obtener el rol del usuario (primer rol si tiene múltiples)
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.crearAdjuntoUseCase.execute(
+            userIdNumero,
+            projectId,
+            dto,
+            file,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.created(
             resultado,
