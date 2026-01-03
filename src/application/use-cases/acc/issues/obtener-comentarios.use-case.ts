@@ -42,6 +42,7 @@ export class ObtenerComentariosUseCase {
                                 ...comment,
                                 createdByReal: registroCreacion.usuario,
                                 createdByRealId: registroCreacion.idusuario,
+                                createdByRealRole: registroCreacion.rol || null,
                                 // Mantener createdBy original de ACC para referencia
                                 createdByAcc: comment.createdBy,
                             };

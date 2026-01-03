@@ -72,12 +72,25 @@ export class AuditoriaRepository implements IAuditoriaRepository {
         metadatoValue: string,
     ): Promise<any | null> {
         // Buscar en auditoría usando metadatos JSONB
-        // Usar los nombres de columnas correctos según la estructura de la tabla
+        // Incluir el rol del usuario desde la relación con authUsuariosRoles y authRoles
+        // PostgreSQL convierte los nombres a minúsculas si no se usan comillas
         const query = `
             SELECT 
                 a.id,
                 a.idusuario,
                 u.nombre as usuario,
+                COALESCE(
+                    (SELECT r.nombre 
+                     FROM authusuariosroles ur
+                     INNER JOIN authroles r ON ur.idrol = r.id
+                     WHERE ur.idusuario = a.idusuario 
+                       AND ur.estado = 1 
+                       AND r.estado = 1
+                     ORDER BY ur.fechacreacion DESC
+                     LIMIT 1),
+                    a.metadatos->>'rol',
+                    'Sin rol'
+                ) as rol,
                 a.accion,
                 a.descripcion,
                 a.datosanteriores as datos_anteriores,

@@ -534,6 +534,11 @@ export class AccIssuesController {
             throw new BadRequestException('User ID inválido');
         }
 
+        // Obtener el rol del usuario (primer rol si tiene múltiples)
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
         const resultado = await this.crearComentarioUseCase.execute(
             userIdNumero,
             projectId,
@@ -541,6 +546,7 @@ export class AccIssuesController {
             dto,
             requestInfo.ipAddress,
             requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.created(

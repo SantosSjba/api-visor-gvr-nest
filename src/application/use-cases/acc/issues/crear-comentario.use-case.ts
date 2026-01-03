@@ -20,6 +20,7 @@ export class CrearComentarioUseCase {
         dto: CrearComentarioDto,
         ipAddress: string,
         userAgent: string,
+        userRole?: string,
     ): Promise<any> {
         const accessToken = await this.obtenerTokenValidoHelper.execute(userId);
 
@@ -56,6 +57,7 @@ export class CrearComentarioUseCase {
                         projectId,
                         issueId,
                         accCommentId: commentId, // ID del comentario de ACC (string/UUID)
+                        rol: userRole || null, // Rol del usuario al momento de crear el comentario
                     },
                 );
             } catch (error) {
