@@ -1,6 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ACC_RECURSOS_REPOSITORY, type IAccRecursosRepository } from '../../../../domain/repositories/acc-recursos.repository.interface';
 import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
+import { BroadcastService } from '../../../../shared/services/broadcast.service';
 import { AsignarIncidenciaDto } from '../../../dtos/acc/issues/asignar-incidencia.dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class AsignarIncidenciaUseCase {
         private readonly accRecursosRepository: IAccRecursosRepository,
         @Inject(AUDITORIA_REPOSITORY)
         private readonly auditoriaRepository: IAuditoriaRepository,
+        private readonly broadcastService: BroadcastService,
     ) { }
 
     async execute(
@@ -64,6 +66,9 @@ export class AsignarIncidenciaUseCase {
             );
         }
 
+        // Obtener información actualizada del recurso para la notificación
+        const recursoActualizado = await this.accRecursosRepository.obtenerRecurso('issue', dto.issueId);
+
         // Registrar en auditoría
         if (ipAddress && userAgent) {
             try {
@@ -92,6 +97,34 @@ export class AsignarIncidenciaUseCase {
                 );
             } catch (error) {
                 // No fallar la operación si la auditoría falla
+            }
+        }
+
+        // Emitir notificación al usuario asignado si se asignó a alguien
+        if (dto.userId && recursoActualizado) {
+            try {
+                const notification = {
+                    type: 'issue_assigned',
+                    title: 'Incidencia Asignada',
+                    message: `${recursoActualizado.usuario_modifico || 'Un usuario'} te ha asignado una incidencia`,
+                    issueId: dto.issueId,
+                    projectId: projectId,
+                    assignedBy: {
+                        id: userId,
+                        name: recursoActualizado.usuario_modifico || 'Usuario desconocido',
+                    },
+                    assignedTo: {
+                        id: dto.userId,
+                        name: recursoActualizado.usuario_asignado || 'Usuario desconocido',
+                    },
+                    issueTitle: recursoActualizado.nombre || 'Incidencia',
+                    timestamp: new Date().toISOString(),
+                };
+
+                this.broadcastService.emitNotificationToUser(dto.userId, notification);
+            } catch (error) {
+                // No fallar la operación si la notificación falla
+                console.error('Error al emitir notificación:', error);
             }
         }
 

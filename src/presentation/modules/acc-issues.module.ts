@@ -36,8 +36,10 @@ import { ACC_RECURSOS_REPOSITORY } from '../../domain/repositories/acc-recursos.
 import { UsuariosRepository } from '../../infrastructure/repositories/usuarios.repository';
 import { USUARIOS_REPOSITORY } from '../../domain/repositories/usuarios.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
+import { BroadcastModule } from './broadcast.module';
 
 @Module({
+    imports: [BroadcastModule],
     controllers: [AccIssuesController],
     providers: [
         // Helper

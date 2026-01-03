@@ -176,6 +176,15 @@ export class BroadcastGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   /**
+   * Emite un evento directamente a un usuario específico por su ID
+   */
+  emitToUser(userId: number, event: string, data: any) {
+    const channel = `App.Models.User.${userId}`;
+    this.emitToChannel(channel, event, data);
+    this.logger.log(`Evento '${event}' emitido al usuario ${userId}`);
+  }
+
+  /**
    * Extrae el token JWT del socket
    */
   private extractTokenFromSocket(client: Socket): string | null {

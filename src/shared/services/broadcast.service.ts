@@ -47,5 +47,15 @@ export class BroadcastService {
   emitToAll(event: string, data: any) {
     this.broadcastGateway.emitToAll(event, data);
   }
+
+  /**
+   * Emite una notificación a un usuario específico
+   * @param userId ID del usuario que recibirá la notificación
+   * @param notification Datos de la notificación
+   */
+  emitNotificationToUser(userId: number, notification: any) {
+    const channel = `App.Models.User.${userId}`;
+    this.broadcastGateway.emitToChannel(channel, 'notification', notification);
+  }
 }
 
