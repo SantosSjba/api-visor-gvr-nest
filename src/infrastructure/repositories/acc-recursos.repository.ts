@@ -91,6 +91,7 @@ export class AccRecursosRepository implements IAccRecursosRepository {
                 estadoRecurso,
                 metadatos,
                 idUsuarioModificacion,
+                true, // p_actualizar_asignado: siempre actualizar el campo de asignación (incluso si es NULL para desasignar)
             ],
         );
 
