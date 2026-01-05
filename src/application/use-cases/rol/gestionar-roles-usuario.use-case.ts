@@ -11,18 +11,28 @@ export class GestionarRolesUsuarioUseCase {
     ) { }
 
     async execute(idUsuario: number, gestionarDto: GestionarRolesUsuarioDto, idUsuarioModificacion: number) {
-        const resultado = await this.rolRepository.gestionarRolesUsuario(
-            idUsuario,
-            gestionarDto.rolesIds,
-            idUsuarioModificacion
-        );
+        try {
+            const resultado = await this.rolRepository.gestionarRolesUsuario(
+                idUsuario,
+                gestionarDto.rolesIds,
+                idUsuarioModificacion
+            );
 
-        if (!resultado || !resultado.success) {
-            throw new BadRequestException(resultado?.message || 'Error al gestionar los roles del usuario');
+            if (!resultado) {
+                throw new BadRequestException('No se pudo gestionar los roles del usuario');
+            }
+
+            return {
+                message: resultado.mensaje || 'Roles gestionados exitosamente',
+                rolesAsignados: resultado.rolesasignados || 0,
+                rolesEliminados: resultado.roleseliminados || 0,
+            };
+        } catch (error: any) {
+            // Si es una excepción de PostgreSQL, extraer el mensaje
+            if (error?.message) {
+                throw new BadRequestException(error.message);
+            }
+            throw new BadRequestException('Error al gestionar los roles del usuario');
         }
-
-        return {
-            message: resultado.message,
-        };
     }
 }

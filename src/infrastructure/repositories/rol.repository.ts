@@ -163,7 +163,7 @@ export class RolRepository implements IRolRepository {
     async gestionarRolesUsuario(idUsuario: number, rolesIds: number[], idUsuarioModificacion: number): Promise<any> {
         const result = await this.databaseFunctionService.callFunctionSingle<any>(
             'authGestionarRolesUsuario',
-            [idUsuario, JSON.stringify(rolesIds), idUsuarioModificacion],
+            [idUsuario, rolesIds, idUsuarioModificacion],
         );
 
         return result;
