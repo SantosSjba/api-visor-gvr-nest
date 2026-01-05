@@ -112,9 +112,15 @@ export class ObtenerIncidenciasPorDocumentoUseCase {
                             issue.id,
                         );
 
+                        // Buscar asignación de la incidencia
+                        const recursoAsignacion = await this.accRecursosRepository.obtenerRecurso('issue', issue.id);
+
+                        let issueEnriquecida: any = { ...issue };
+
+                        // Agregar información del creador real
                         if (registroCreacion && registroCreacion.usuario) {
-                            return {
-                                ...issue,
+                            issueEnriquecida = {
+                                ...issueEnriquecida,
                                 createdByReal: registroCreacion.usuario,
                                 createdByRealId: registroCreacion.idusuario,
                                 createdByRealRole: registroCreacion.rol || null,
@@ -123,7 +129,17 @@ export class ObtenerIncidenciasPorDocumentoUseCase {
                             };
                         }
 
-                        return issue;
+                        // Agregar información del usuario asignado
+                        if (recursoAsignacion && recursoAsignacion.idusuario_asignado) {
+                            issueEnriquecida = {
+                                ...issueEnriquecida,
+                                assignedToReal: recursoAsignacion.usuario_asignado,
+                                assignedToRealId: recursoAsignacion.idusuario_asignado,
+                                assignedToRealRole: recursoAsignacion.rol_asignado || null,
+                            };
+                        }
+
+                        return issueEnriquecida;
                     } catch (error) {
                         // Si falla la búsqueda de auditoría, retornar incidencia original
                         return issue;
