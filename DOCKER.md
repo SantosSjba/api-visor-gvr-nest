@@ -148,6 +148,8 @@ docker exec -it <container-id> sh
 - No uses `*` en producción
 
 ## Comandos para crear y subir imagen a Docker
+## Limpiar cache de BuildKit
+docker builder prune -af
 
 # 1. Construir nueva imagen
 docker build -t tuusuario/mi-proyecto-nestjs:latest .
