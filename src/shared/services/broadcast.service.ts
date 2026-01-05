@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { BroadcastGateway } from '../../presentation/gateways/broadcast.gateway';
+import { NOTIFICACIONES_REPOSITORY } from '../../domain/repositories/notificaciones.repository.interface';
+import type { INotificacionesRepository } from '../../domain/repositories/notificaciones.repository.interface';
 
 /**
  * Servicio para emitir eventos de broadcasting
@@ -7,7 +9,11 @@ import { BroadcastGateway } from '../../presentation/gateways/broadcast.gateway'
  */
 @Injectable()
 export class BroadcastService {
-  constructor(private readonly broadcastGateway: BroadcastGateway) {}
+  constructor(
+    private readonly broadcastGateway: BroadcastGateway,
+    @Inject(NOTIFICACIONES_REPOSITORY)
+    private readonly notificacionesRepository: INotificacionesRepository,
+  ) {}
 
   /**
    * Emite un evento de menú creado
@@ -50,12 +56,29 @@ export class BroadcastService {
 
   /**
    * Emite una notificación a un usuario específico
+   * Si el usuario no está conectado, guarda la notificación en la base de datos
    * @param userId ID del usuario que recibirá la notificación
    * @param notification Datos de la notificación
    */
-  emitNotificationToUser(userId: number, notification: any) {
-    const channel = `App.Models.User.${userId}`;
-    this.broadcastGateway.emitToChannel(channel, 'notification', notification);
+  async emitNotificationToUser(userId: number, notification: any) {
+    // Verificar si el usuario está conectado
+    const isConnected = this.broadcastGateway.isUserConnected(userId);
+    
+    if (isConnected) {
+      // Usuario conectado: enviar por WebSocket
+      const channel = `App.Models.User.${userId}`;
+      this.broadcastGateway.emitToChannel(channel, 'notification', notification);
+    } else {
+      // Usuario no conectado: guardar en base de datos
+      // Toda la información específica se almacena en el campo 'datos'
+      await this.notificacionesRepository.guardarNotificacionPendiente(
+        userId,
+        notification.type || 'info',
+        notification.title || 'Notificación',
+        notification.message || null,
+        notification, // Toda la notificación se guarda en datos para mantener compatibilidad
+      );
+    }
   }
 }
 

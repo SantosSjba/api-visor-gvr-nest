@@ -185,6 +185,15 @@ export class BroadcastGateway implements OnGatewayInit, OnGatewayConnection, OnG
   }
 
   /**
+   * Verifica si un usuario está conectado
+   */
+  isUserConnected(userId: number): boolean {
+    const channel = `App.Models.User.${userId}`;
+    const room = this.server.sockets.adapter.rooms.get(channel);
+    return room ? room.size > 0 : false;
+  }
+
+  /**
    * Extrae el token JWT del socket
    */
   private extractTokenFromSocket(client: Socket): string | null {

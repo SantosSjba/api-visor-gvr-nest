@@ -31,6 +31,7 @@ import { DataManagementBucketsModule } from './presentation/modules/data-managem
 import { AuditoriaModule } from './presentation/modules/auditoria.module';
 import { AccRecursosModule } from './presentation/modules/acc-recursos.module';
 import { BroadcastModule } from './presentation/modules/broadcast.module';
+import { NotificacionesModule } from './presentation/modules/notificaciones.module';
 import { HealthModule } from './presentation/modules/health.module';
 
 @Module({
@@ -62,6 +63,7 @@ import { HealthModule } from './presentation/modules/health.module';
     DataManagementBucketsModule,
     AuditoriaModule,
     AccRecursosModule,
+    NotificacionesModule,
     UserModule,
     GeneralModule,
     EmpresaModule,
