@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { CrearProyectoDto } from '../../../dtos/acc/projects/crear-proyecto.dto';
 import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
+import { ACC_RESOURCES_REPOSITORY, type IAccResourcesRepository } from '../../../../domain/repositories/acc-resources.repository.interface';
 import ObtenerTokenValidoHelper from '../issues/obtener-token-valido.helper';
 
 @Injectable()
@@ -11,6 +12,8 @@ export class CrearProyectoUseCase {
         private readonly obtenerTokenValidoHelper: ObtenerTokenValidoHelper,
         @Inject(AUDITORIA_REPOSITORY)
         private readonly auditoriaRepository: IAuditoriaRepository,
+        @Inject(ACC_RESOURCES_REPOSITORY)
+        private readonly accResourcesRepository: IAccResourcesRepository,
     ) { }
 
     async execute(
@@ -95,6 +98,7 @@ export class CrearProyectoUseCase {
 
         if (projectId && numericUserId && ipAddress && userAgent) {
             try {
+                // Registrar auditoría
                 await this.auditoriaRepository.registrarAccion(
                     numericUserId,
                     'PROJECT_CREATE',
@@ -117,6 +121,35 @@ export class CrearProyectoUseCase {
                         rol: userRole || null,
                     },
                 );
+
+                // Crear o obtener el recurso del proyecto
+                try {
+                    const recursoResult = await this.accResourcesRepository.crearRecurso({
+                        external_id: projectId,
+                        resource_type: 'project',
+                        name: projectName.substring(0, 255),
+                        parent_id: undefined,
+                        account_id: accountId,
+                        idUsuarioCreacion: numericUserId,
+                    });
+
+                    // Si el recurso se creó/obtuvo exitosamente, asignar permiso al usuario creador
+                    if (recursoResult && recursoResult.success && recursoResult.id) {
+                        try {
+                            await this.accResourcesRepository.asignarPermisoUsuario({
+                                user_id: numericUserId,
+                                resource_id: recursoResult.id,
+                                idUsuarioCreacion: numericUserId,
+                            });
+                        } catch (permisoError) {
+                            // No fallar si el permiso ya existe o hay algún error
+                            console.warn('Error asignando permiso automático al creador:', permisoError);
+                        }
+                    }
+                } catch (recursoError) {
+                    // No fallar la operación si la creación del recurso falla
+                    console.warn('Error creando recurso del proyecto:', recursoError);
+                }
             } catch (error) {
                 // No fallar la operación si la auditoría falla
                 console.error('Error registrando auditoría de creación de proyecto:', error);

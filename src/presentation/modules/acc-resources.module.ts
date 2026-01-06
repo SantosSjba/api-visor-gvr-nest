@@ -11,6 +11,12 @@ import {
     AsignarPermisoUseCase,
     RemoverPermisoUseCase,
     SincronizarPermisosRolUseCase,
+    ListarPermisosUsuarioUseCase,
+    ListarUsuariosRecursoUseCase,
+    ListarUsuariosDisponiblesRecursoUseCase,
+    AsignarPermisoUsuarioUseCase,
+    RemoverPermisoUsuarioUseCase,
+    SincronizarPermisosUsuarioUseCase,
 } from '../../application/use-cases/acc/resources';
 import { AccResourcesRepository } from '../../infrastructure/repositories/acc-resources.repository';
 import { ACC_RESOURCES_REPOSITORY } from '../../domain/repositories/acc-resources.repository.interface';
@@ -30,6 +36,12 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         AsignarPermisoUseCase,
         RemoverPermisoUseCase,
         SincronizarPermisosRolUseCase,
+        ListarPermisosUsuarioUseCase,
+        ListarUsuariosRecursoUseCase,
+        ListarUsuariosDisponiblesRecursoUseCase,
+        AsignarPermisoUsuarioUseCase,
+        RemoverPermisoUsuarioUseCase,
+        SincronizarPermisosUsuarioUseCase,
 
         // Repository
         {

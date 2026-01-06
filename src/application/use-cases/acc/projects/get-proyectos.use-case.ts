@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { GetProyectosDto } from '../../../dtos/acc/projects/get-proyectos.dto';
 import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
+import { ACC_RESOURCES_REPOSITORY, type IAccResourcesRepository } from '../../../../domain/repositories/acc-resources.repository.interface';
 
 @Injectable()
 export class GetProyectosUseCase {
@@ -9,9 +10,11 @@ export class GetProyectosUseCase {
         private readonly autodeskApiService: AutodeskApiService,
         @Inject(AUDITORIA_REPOSITORY)
         private readonly auditoriaRepository: IAuditoriaRepository,
+        @Inject(ACC_RESOURCES_REPOSITORY)
+        private readonly accResourcesRepository: IAccResourcesRepository,
     ) { }
 
-    async execute(accountId: string, dto: GetProyectosDto): Promise<any> {
+    async execute(accountId: string, dto: GetProyectosDto, userId?: number): Promise<any> {
         const options: Record<string, any> = {};
 
         if (dto.fields) {
@@ -71,14 +74,60 @@ export class GetProyectosUseCase {
             dto.token,
         );
 
-        // Enriquecer proyectos con información de auditoría
+        // Enriquecer proyectos con información de auditoría y filtrar por acceso de usuario
         const proyectos = resultado?.results || resultado?.data?.results || [];
         
         if (Array.isArray(proyectos) && proyectos.length > 0) {
+            // Si hay userId, obtener los externalIds de los recursos (proyectos) a los que tiene acceso
+            let proyectosConAcceso: Set<string> = new Set();
+            if (userId) {
+                try {
+                    // Obtener todos los permisos del usuario (puede haber muchos, así que usamos un límite alto)
+                    let offset = 0;
+                    const limit = 1000;
+                    let hasMore = true;
+                    
+                    while (hasMore) {
+                        const permisosUsuario = await this.accResourcesRepository.listarPermisosUsuario({
+                            userId,
+                            limit,
+                            offset,
+                        });
+                        
+                        // Filtrar solo recursos de tipo 'project' y obtener sus externalIds
+                        const proyectosAcceso = (permisosUsuario.data || [])
+                            .filter((p: any) => p.resourcetype === 'project' && p.externalid)
+                            .map((p: any) => p.externalid);
+                        
+                        proyectosAcceso.forEach((id: string) => proyectosConAcceso.add(id));
+                        
+                        // Verificar si hay más resultados
+                        const total = permisosUsuario.pagination?.total || 0;
+                        hasMore = (offset + limit) < total;
+                        offset += limit;
+                    }
+                } catch (error) {
+                    console.warn('Error obteniendo permisos del usuario:', error);
+                }
+            }
+
             const proyectosEnriquecidos = await Promise.all(
                 proyectos.map(async (proyecto: any) => {
                     try {
                         const proyectoId = proyecto.id;
+
+                        // Si hay userId, filtrar proyectos: solo mostrar los que el usuario tiene acceso
+                        if (userId) {
+                            // Si no hay proyectos con acceso, no mostrar ninguno
+                            if (proyectosConAcceso.size === 0) {
+                                return null;
+                            }
+                            
+                            // Verificar si el proyectoId está en los proyectos con acceso
+                            if (!proyectosConAcceso.has(proyectoId)) {
+                                return null; // Filtrar este proyecto
+                            }
+                        }
 
                         // Buscar en auditoría el registro de creación de este proyecto
                         const registroCreacion = await this.auditoriaRepository.obtenerAuditoriaPorMetadatos(
@@ -105,24 +154,35 @@ export class GetProyectosUseCase {
                 }),
             );
 
+            // Filtrar los null (proyectos sin acceso)
+            const proyectosFiltrados = proyectosEnriquecidos.filter((p: any) => p !== null);
+
             // Retornar con la estructura original
             if (resultado?.results) {
                 return {
                     ...resultado,
-                    results: proyectosEnriquecidos,
+                    results: proyectosFiltrados,
+                    pagination: resultado.pagination ? {
+                        ...resultado.pagination,
+                        totalResults: proyectosFiltrados.length,
+                    } : undefined,
                 };
             } else if (resultado?.data) {
                 return {
                     ...resultado,
                     data: {
                         ...resultado.data,
-                        results: proyectosEnriquecidos,
+                        results: proyectosFiltrados,
+                        pagination: resultado.data.pagination ? {
+                            ...resultado.data.pagination,
+                            totalResults: proyectosFiltrados.length,
+                        } : undefined,
                     },
                 };
             } else {
                 return {
                     ...resultado,
-                    results: proyectosEnriquecidos,
+                    results: proyectosFiltrados,
                 };
             }
         }

@@ -66,12 +66,28 @@ export class AccProjectsController {
     async getProyectos(
         @Param('accountId') accountId: string,
         @Query() dto: GetProyectosDto,
+        @Req() request: Request,
     ) {
         if (!accountId) {
             throw new BadRequestException('El ID de la cuenta es requerido');
         }
 
-        const resultado = await this.getProyectosUseCase.execute(accountId, dto);
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        // Convertir a número si es necesario
+        let numericUserId: number | undefined = undefined;
+        if (internalUserId) {
+            if (typeof internalUserId === 'number') {
+                numericUserId = internalUserId;
+            } else if (typeof internalUserId === 'string') {
+                const parsed = parseInt(internalUserId, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    numericUserId = parsed;
+                }
+            }
+        }
+
+        const resultado = await this.getProyectosUseCase.execute(accountId, dto, numericUserId);
 
         return ApiResponseDto.success(
             resultado,

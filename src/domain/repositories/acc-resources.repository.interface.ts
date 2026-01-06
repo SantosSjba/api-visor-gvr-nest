@@ -50,6 +50,31 @@ export interface SincronizarPermisosRolData {
     idUsuarioModificacion: number;
 }
 
+export interface ListarPermisosUsuarioParams {
+    userId: number;
+    limit?: number;
+    offset?: number;
+}
+
+export interface AsignarPermisoUsuarioData {
+    user_id: number;
+    resource_id: number;
+    idUsuarioCreacion: number;
+}
+
+export interface SincronizarPermisosUsuarioData {
+    user_id: number;
+    resource_ids: number[];
+    idUsuarioModificacion: number;
+}
+
+export interface ListarUsuariosDisponiblesRecursoParams {
+    resourceId: number;
+    busqueda?: string;
+    limit?: number;
+    offset?: number;
+}
+
 export interface IAccResourcesRepository {
     listarRecursos(params: ListarRecursosParams): Promise<ListarRecursosResponse>;
     obtenerRecursoPorId(id: number): Promise<any>;
@@ -61,6 +86,13 @@ export interface IAccResourcesRepository {
     asignarPermiso(data: AsignarPermisoData): Promise<any>;
     removerPermiso(id: number, idUsuarioModificacion: number): Promise<any>;
     sincronizarPermisosRol(data: SincronizarPermisosRolData): Promise<any>;
+    // Métodos para permisos de usuarios
+    listarPermisosUsuario(params: ListarPermisosUsuarioParams): Promise<any>;
+    listarUsuariosRecurso(resourceId: number): Promise<any>;
+    listarUsuariosDisponiblesRecurso(params: ListarUsuariosDisponiblesRecursoParams): Promise<any>;
+    asignarPermisoUsuario(data: AsignarPermisoUsuarioData): Promise<any>;
+    removerPermisoUsuario(id: number, idUsuarioModificacion: number): Promise<any>;
+    sincronizarPermisosUsuario(data: SincronizarPermisosUsuarioData): Promise<any>;
 }
 
 export const ACC_RESOURCES_REPOSITORY = 'ACC_RESOURCES_REPOSITORY';

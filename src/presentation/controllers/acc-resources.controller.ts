@@ -27,6 +27,12 @@ import {
     AsignarPermisoUseCase,
     RemoverPermisoUseCase,
     SincronizarPermisosRolUseCase,
+    ListarPermisosUsuarioUseCase,
+    ListarUsuariosRecursoUseCase,
+    ListarUsuariosDisponiblesRecursoUseCase,
+    AsignarPermisoUsuarioUseCase,
+    RemoverPermisoUsuarioUseCase,
+    SincronizarPermisosUsuarioUseCase,
 } from '../../application/use-cases/acc/resources';
 import {
     ListarRecursosDto,
@@ -35,6 +41,10 @@ import {
     ListarPermisosRolDto,
     AsignarPermisoDto,
     SincronizarPermisosRolDto,
+    ListarPermisosUsuarioDto,
+    AsignarPermisoUsuarioDto,
+    SincronizarPermisosUsuarioDto,
+    ListarUsuariosDisponiblesRecursoDto,
 } from '../../application/dtos/acc/resources';
 
 @Controller('acc/resources')
@@ -51,6 +61,12 @@ export class AccResourcesController {
         private readonly asignarPermisoUseCase: AsignarPermisoUseCase,
         private readonly removerPermisoUseCase: RemoverPermisoUseCase,
         private readonly sincronizarPermisosRolUseCase: SincronizarPermisosRolUseCase,
+        private readonly listarPermisosUsuarioUseCase: ListarPermisosUsuarioUseCase,
+        private readonly listarUsuariosRecursoUseCase: ListarUsuariosRecursoUseCase,
+        private readonly listarUsuariosDisponiblesRecursoUseCase: ListarUsuariosDisponiblesRecursoUseCase,
+        private readonly asignarPermisoUsuarioUseCase: AsignarPermisoUsuarioUseCase,
+        private readonly removerPermisoUsuarioUseCase: RemoverPermisoUsuarioUseCase,
+        private readonly sincronizarPermisosUsuarioUseCase: SincronizarPermisosUsuarioUseCase,
     ) { }
 
     /**
@@ -282,6 +298,164 @@ export class AccResourcesController {
         const userId = user?.sub || user?.id || 1;
 
         const resultado = await this.sincronizarPermisosRolUseCase.execute(dto, userId);
+        return ApiResponseDto.success(
+            { asignados: resultado.asignados },
+            resultado.message || 'Permisos sincronizados exitosamente',
+        );
+    }
+
+    /**
+     * GET - Listar permisos de un usuario específico
+     * GET /acc/resources/users/:userId/permissions
+     */
+    @Get('users/:userId/permissions')
+    @HttpCode(HttpStatus.OK)
+    async listUserPermissions(
+        @Param('userId') userId: string,
+        @Query() dto: ListarPermisosUsuarioDto,
+    ) {
+        const userIdNum = parseInt(userId, 10);
+        if (isNaN(userIdNum)) {
+            throw new BadRequestException('El ID del usuario debe ser un número válido');
+        }
+
+        const resultado = await this.listarPermisosUsuarioUseCase.execute(userIdNum, dto);
+        if (resultado.pagination) {
+            return ApiResponseDto.paginated(
+                resultado.data,
+                {
+                    currentPage: resultado.pagination.current_page || 1,
+                    itemsPerPage: resultado.pagination.limit,
+                    totalItems: resultado.pagination.total,
+                    totalPages: resultado.pagination.total_pages || 0,
+                },
+                'Permisos listados exitosamente',
+            );
+        }
+        return ApiResponseDto.success(
+            resultado.data,
+            'Permisos listados exitosamente',
+        );
+    }
+
+    /**
+     * GET - Listar usuarios disponibles para un recurso (incluye búsqueda)
+     * GET /acc/resources/:resourceId/users/available
+     * IMPORTANTE: Esta ruta debe ir antes de la ruta genérica :id
+     */
+    @Get(':resourceId/users/available')
+    @HttpCode(HttpStatus.OK)
+    async listAvailableUsersForResource(
+        @Param('resourceId') resourceId: string,
+        @Query() dto: ListarUsuariosDisponiblesRecursoDto,
+    ) {
+        const resourceIdNum = parseInt(resourceId, 10);
+        if (isNaN(resourceIdNum)) {
+            throw new BadRequestException('El ID del recurso debe ser un número válido');
+        }
+
+        const resultado = await this.listarUsuariosDisponiblesRecursoUseCase.execute(resourceIdNum, dto);
+        if (resultado.pagination) {
+            return ApiResponseDto.paginated(
+                resultado.data,
+                {
+                    currentPage: resultado.pagination.current_page || 1,
+                    itemsPerPage: resultado.pagination.limit,
+                    totalItems: resultado.pagination.total,
+                    totalPages: resultado.pagination.total_pages || 0,
+                },
+                'Usuarios disponibles listados exitosamente',
+            );
+        }
+        return ApiResponseDto.success(
+            resultado.data,
+            'Usuarios disponibles listados exitosamente',
+        );
+    }
+
+    /**
+     * GET - Listar usuarios con acceso a un recurso
+     * GET /acc/resources/:resourceId/users
+     * IMPORTANTE: Esta ruta debe ir antes de la ruta genérica :id
+     */
+    @Get(':resourceId/users')
+    @HttpCode(HttpStatus.OK)
+    async listResourceUsers(@Param('resourceId') resourceId: string) {
+        const resourceIdNum = parseInt(resourceId, 10);
+        if (isNaN(resourceIdNum)) {
+            throw new BadRequestException('El ID del recurso debe ser un número válido');
+        }
+
+        const resultado = await this.listarUsuariosRecursoUseCase.execute(resourceIdNum);
+        return ApiResponseDto.success(
+            resultado.data,
+            'Usuarios listados exitosamente',
+        );
+    }
+
+    /**
+     * POST - Asignar permiso de recurso a usuario
+     * POST /acc/resources/users/permissions
+     */
+    @Post('users/permissions')
+    @HttpCode(HttpStatus.CREATED)
+    async assignUserPermission(@Body() dto: AsignarPermisoUsuarioDto, @Req() request: Request) {
+        const user = (request as any).user;
+        const userId = user?.sub || user?.id || 1;
+
+        const resultado = await this.asignarPermisoUsuarioUseCase.execute(dto, userId);
+        return ApiResponseDto.created(
+            { id: resultado.id },
+            resultado.message || 'Permiso asignado exitosamente',
+        );
+    }
+
+    /**
+     * DELETE - Remover permiso de recurso a usuario
+     * DELETE /acc/resources/users/permissions/:id
+     */
+    @Delete('users/permissions/:id')
+    @HttpCode(HttpStatus.OK)
+    async removeUserPermission(@Param('id') id: string, @Req() request: Request) {
+        const permissionId = parseInt(id, 10);
+        if (isNaN(permissionId)) {
+            throw new BadRequestException('El ID del permiso debe ser un número válido');
+        }
+
+        const user = (request as any).user;
+        const userId = user?.sub || user?.id || 1;
+
+        const resultado = await this.removerPermisoUsuarioUseCase.execute(permissionId, userId);
+        return ApiResponseDto.success(
+            null,
+            resultado.message || 'Permiso removido exitosamente',
+        );
+    }
+
+    /**
+     * PUT - Sincronizar permisos de un usuario (asignar múltiples recursos)
+     * PUT /acc/resources/users/:userId/permissions/sync
+     */
+    @Put('users/:userId/permissions/sync')
+    @HttpCode(HttpStatus.OK)
+    async syncUserPermissions(
+        @Param('userId') userId: string,
+        @Body() dto: SincronizarPermisosUsuarioDto,
+        @Req() request: Request,
+    ) {
+        const userIdNum = parseInt(userId, 10);
+        if (isNaN(userIdNum)) {
+            throw new BadRequestException('El ID del usuario debe ser un número válido');
+        }
+
+        if (dto.user_id !== userIdNum) {
+            throw new BadRequestException('El user_id en el body debe coincidir con el userId en la URL');
+        }
+
+        const user = (request as any).user;
+        const idUsuarioModificacion = user?.sub || user?.id || 1;
+
+        const resultado = await this.sincronizarPermisosUsuarioUseCase.execute(dto, idUsuarioModificacion);
         return ApiResponseDto.success(
             { asignados: resultado.asignados },
             resultado.message || 'Permisos sincronizados exitosamente',
