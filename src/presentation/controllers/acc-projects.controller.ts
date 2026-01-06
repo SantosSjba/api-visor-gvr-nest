@@ -87,7 +87,11 @@ export class AccProjectsController {
             }
         }
 
-        const resultado = await this.getProyectosUseCase.execute(accountId, dto, numericUserId);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.getProyectosUseCase.execute(accountId, dto, numericUserId, userRole);
 
         return ApiResponseDto.success(
             resultado,

@@ -14,7 +14,7 @@ export class GetProyectosUseCase {
         private readonly accResourcesRepository: IAccResourcesRepository,
     ) { }
 
-    async execute(accountId: string, dto: GetProyectosDto, userId?: number): Promise<any> {
+    async execute(accountId: string, dto: GetProyectosDto, userId?: number, userRole?: string): Promise<any> {
         const options: Record<string, any> = {};
 
         if (dto.fields) {
@@ -77,10 +77,18 @@ export class GetProyectosUseCase {
         // Enriquecer proyectos con información de auditoría y filtrar por acceso de usuario
         const proyectos = resultado?.results || resultado?.data?.results || [];
         
+        // Verificar si el usuario es administrador
+        const esAdministrador = userRole && (
+            userRole.toLowerCase().includes('admin') ||
+            userRole.toLowerCase().includes('administrador') ||
+            userRole.toLowerCase() === 'admin' ||
+            userRole.toLowerCase() === 'administrador'
+        );
+        
         if (Array.isArray(proyectos) && proyectos.length > 0) {
-            // Si hay userId, obtener los externalIds de los recursos (proyectos) a los que tiene acceso
+            // Si hay userId y NO es administrador, obtener los externalIds de los recursos (proyectos) a los que tiene acceso
             let proyectosConAcceso: Set<string> = new Set();
-            if (userId) {
+            if (userId && !esAdministrador) {
                 try {
                     // Obtener todos los permisos del usuario (puede haber muchos, así que usamos un límite alto)
                     let offset = 0;
@@ -116,8 +124,8 @@ export class GetProyectosUseCase {
                     try {
                         const proyectoId = proyecto.id;
 
-                        // Si hay userId, filtrar proyectos: solo mostrar los que el usuario tiene acceso
-                        if (userId) {
+                        // Si hay userId y NO es administrador, filtrar proyectos: solo mostrar los que el usuario tiene acceso
+                        if (userId && !esAdministrador) {
                             // Si no hay proyectos con acceso, no mostrar ninguno
                             if (proyectosConAcceso.size === 0) {
                                 return null;
