@@ -49,38 +49,10 @@ export class SincronizarCarpetasProyectoUseCase {
         }
 
         // 2. Obtener todos los usuarios con acceso al proyecto
+        // IMPORTANTE: Solo sincronizamos con los usuarios que YA tienen acceso explícito al proyecto
+        // El admin puede ver todo sin necesidad de permisos explícitos
         const usuariosProyecto = await this.accResourcesRepository.listarUsuariosRecurso(proyectoResourceId);
-        let userIds = usuariosProyecto.data?.map((u: any) => u.userid) || [];
-
-        // Si no hay usuarios con acceso al proyecto, asignar al menos al usuario que está ejecutando la sincronización
-        if (userIds.length === 0) {
-            try {
-                await this.accResourcesRepository.asignarPermisoUsuario({
-                    user_id: userId,
-                    resource_id: proyectoResourceId,
-                    idUsuarioCreacion: userId,
-                });
-                userIds = [userId];
-            } catch (error) {
-                console.warn('Error asignando permiso inicial al usuario:', error);
-                // Si falla, intentar continuar con el usuario actual de todas formas
-                userIds = [userId];
-            }
-        } else {
-            // Asegurarse de que el usuario actual también esté en la lista
-            if (!userIds.includes(userId)) {
-                try {
-                    await this.accResourcesRepository.asignarPermisoUsuario({
-                        user_id: userId,
-                        resource_id: proyectoResourceId,
-                        idUsuarioCreacion: userId,
-                    });
-                    userIds.push(userId);
-                } catch (error) {
-                    console.warn('Error asignando permiso al usuario actual:', error);
-                }
-            }
-        }
+        const userIds = usuariosProyecto.data?.map((u: any) => u.userid) || [];
 
         // 3. Obtener carpetas principales del proyecto
         const carpetasPrincipales = await this.autodeskApiService.obtenerCarpetasPrincipales(token.tokenAcceso, hubId, projectId);
@@ -88,7 +60,7 @@ export class SincronizarCarpetasProyectoUseCase {
 
         let carpetasSincronizadas = 0;
 
-        // 4. Función recursiva para sincronizar carpetas
+        // 4. Función recursiva para sincronizar carpetas (solo crea los recursos, no asigna permisos)
         const sincronizarCarpetaRecursiva = async (folderId: string, folderName: string, parentResourceId: number): Promise<void> => {
             try {
                 // Obtener o crear el recurso de la carpeta
@@ -111,25 +83,6 @@ export class SincronizarCarpetasProyectoUseCase {
                     carpetasSincronizadas++;
                 }
 
-                // Asignar permisos a todos los usuarios del proyecto
-                for (const userIdItem of userIds) {
-                    try {
-                        // Verificar si el usuario ya tiene permiso
-                        const usuariosCarpeta = await this.accResourcesRepository.listarUsuariosRecurso(carpetaResourceId);
-                        const tienePermiso = usuariosCarpeta.data?.some((u: any) => u.userid === userIdItem);
-
-                        if (!tienePermiso) {
-                            await this.accResourcesRepository.asignarPermisoUsuario({
-                                user_id: userIdItem,
-                                resource_id: carpetaResourceId,
-                                idUsuarioCreacion: userId,
-                            });
-                        }
-                    } catch (error) {
-                        console.warn(`Error asignando permiso al usuario ${userIdItem} para carpeta ${folderId}:`, error);
-                    }
-                }
-
                 // Obtener subcarpetas de esta carpeta
                 try {
                     const contenidoCarpeta = await this.autodeskApiService.obtenerContenidoCarpeta(
@@ -148,10 +101,10 @@ export class SincronizarCarpetasProyectoUseCase {
                         await sincronizarCarpetaRecursiva(subcarpetaId, subcarpetaName, carpetaResourceId);
                     }
                 } catch (error) {
-                    console.warn(`Error obteniendo subcarpetas de ${folderId}:`, error);
+                    // Error obteniendo subcarpetas, continuar con las demás
                 }
             } catch (error) {
-                console.error(`Error sincronizando carpeta ${folderId}:`, error);
+                // Error sincronizando carpeta, continuar con las demás
             }
         };
 
@@ -162,10 +115,46 @@ export class SincronizarCarpetasProyectoUseCase {
             await sincronizarCarpetaRecursiva(folderId, folderName, proyectoResourceId);
         }
 
+        // 6. Sincronizar permisos: Anular accesos previos y asignar según usuarios del proyecto
+        let permisosInfo = {
+            usuarios: userIds.length,
+            carpetasConPermisos: 0,
+            permisosEliminados: 0,
+            permisosAsignados: 0,
+        };
+
+        try {
+            const resultadoPermisos = await this.accResourcesRepository.sincronizarPermisosProyecto({
+                project_resource_id: proyectoResourceId,
+                idUsuarioModificacion: userId,
+            });
+
+            if (resultadoPermisos?.success) {
+                permisosInfo = {
+                    usuarios: resultadoPermisos.usuarios_proyecto || userIds.length,
+                    carpetasConPermisos: resultadoPermisos.carpetas_sincronizadas || 0,
+                    permisosEliminados: resultadoPermisos.permisos_eliminados || 0,
+                    permisosAsignados: resultadoPermisos.permisos_asignados || 0,
+                };
+            }
+        } catch (error) {
+            // Continuar aunque falle la sincronización de permisos
+        }
+
+        // Construir mensaje informativo
+        let mensaje = `Sincronización completada. ${carpetasSincronizadas} carpetas nuevas sincronizadas.`;
+        
+        if (permisosInfo.usuarios > 0) {
+            mensaje += ` ${permisosInfo.permisosAsignados} permisos asignados a ${permisosInfo.usuarios} usuarios en ${permisosInfo.carpetasConPermisos} carpetas (${permisosInfo.permisosEliminados} permisos previos eliminados).`;
+        } else {
+            mensaje += ` No se sincronizaron permisos porque no hay usuarios con acceso al proyecto.`;
+        }
+
         return {
             success: true,
-            message: `Sincronización completada. ${carpetasSincronizadas} carpetas nuevas sincronizadas.`,
+            message: mensaje,
             carpetasSincronizadas,
+            permisosInfo,
         };
     }
 }

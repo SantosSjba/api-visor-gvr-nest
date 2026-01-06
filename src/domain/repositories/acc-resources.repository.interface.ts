@@ -75,6 +75,11 @@ export interface ListarUsuariosDisponiblesRecursoParams {
     offset?: number;
 }
 
+export interface SincronizarPermisosProyectoData {
+    project_resource_id: number;
+    idUsuarioModificacion: number;
+}
+
 export interface IAccResourcesRepository {
     listarRecursos(params: ListarRecursosParams): Promise<ListarRecursosResponse>;
     obtenerRecursoPorId(id: number): Promise<any>;
@@ -94,6 +99,7 @@ export interface IAccResourcesRepository {
     asignarPermisoUsuario(data: AsignarPermisoUsuarioData): Promise<any>;
     removerPermisoUsuario(id: number, idUsuarioModificacion: number): Promise<any>;
     sincronizarPermisosUsuario(data: SincronizarPermisosUsuarioData): Promise<any>;
+    sincronizarPermisosProyecto(data: SincronizarPermisosProyectoData): Promise<any>;
 }
 
 export const ACC_RESOURCES_REPOSITORY = 'ACC_RESOURCES_REPOSITORY';

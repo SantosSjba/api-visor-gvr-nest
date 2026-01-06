@@ -12,8 +12,10 @@ import type {
     AsignarPermisoUsuarioData,
     SincronizarPermisosUsuarioData,
     ListarUsuariosDisponiblesRecursoParams,
+    SincronizarPermisosProyectoData,
 } from '../../domain/repositories/acc-resources.repository.interface';
 import { DatabaseFunctionService } from '../database/database-function.service';
+import { normalizeExternalId } from '../../shared/utils/normalize-external-id.util';
 
 @Injectable()
 export class AccResourcesRepository implements IAccResourcesRepository {
@@ -66,7 +68,10 @@ export class AccResourcesRepository implements IAccResourcesRepository {
     }
 
     async obtenerRecursoPorExternalId(externalId: string): Promise<any> {
-        // Buscar el recurso por externalId usando una query directa
+        // Normalizar el externalId antes de buscar (quitar prefijo "b." si existe)
+        const normalizedId = normalizeExternalId(externalId);
+        
+        // Buscar el recurso por externalId normalizado usando una query directa
         const query = `
             SELECT id, externalid, resourcetype, name, parentid, accountid, estado
             FROM accresources
@@ -76,7 +81,7 @@ export class AccResourcesRepository implements IAccResourcesRepository {
         
         const result = await this.databaseFunctionService.executeQuery<any>(
             query,
-            [externalId],
+            [normalizedId],
         );
 
         return result.length > 0 ? result[0] : null;
@@ -313,6 +318,18 @@ export class AccResourcesRepository implements IAccResourcesRepository {
             [
                 data.user_id,
                 data.resource_ids,
+                data.idUsuarioModificacion,
+            ],
+        );
+
+        return result;
+    }
+
+    async sincronizarPermisosProyecto(data: SincronizarPermisosProyectoData): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accSincronizarPermisos_Proyecto',
+            [
+                data.project_resource_id,
                 data.idUsuarioModificacion,
             ],
         );
