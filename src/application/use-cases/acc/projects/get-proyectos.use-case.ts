@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { GetProyectosDto } from '../../../dtos/acc/projects/get-proyectos.dto';
+import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
 
 @Injectable()
 export class GetProyectosUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
+        @Inject(AUDITORIA_REPOSITORY)
+        private readonly auditoriaRepository: IAuditoriaRepository,
     ) { }
 
     async execute(accountId: string, dto: GetProyectosDto): Promise<any> {
@@ -62,10 +65,68 @@ export class GetProyectosUseCase {
         options.limit = dto.limit || 20;
         options.offset = dto.offset || 0;
 
-        return await this.autodeskApiService.getAccProjects(
+        const resultado = await this.autodeskApiService.getAccProjects(
             accountId,
             options,
             dto.token,
         );
+
+        // Enriquecer proyectos con información de auditoría
+        const proyectos = resultado?.results || resultado?.data?.results || [];
+        
+        if (Array.isArray(proyectos) && proyectos.length > 0) {
+            const proyectosEnriquecidos = await Promise.all(
+                proyectos.map(async (proyecto: any) => {
+                    try {
+                        const proyectoId = proyecto.id;
+
+                        // Buscar en auditoría el registro de creación de este proyecto
+                        const registroCreacion = await this.auditoriaRepository.obtenerAuditoriaPorMetadatos(
+                            'project',
+                            'PROJECT_CREATE',
+                            'accProjectId',
+                            proyectoId,
+                        );
+
+                        if (registroCreacion && registroCreacion.usuario) {
+                            return {
+                                ...proyecto,
+                                createdByReal: registroCreacion.usuario,
+                                createdByRealId: registroCreacion.idusuario,
+                                createdByRealRole: registroCreacion.rol || null,
+                            };
+                        }
+
+                        return proyecto;
+                    } catch (error) {
+                        // Si falla la búsqueda, retornar proyecto original
+                        return proyecto;
+                    }
+                }),
+            );
+
+            // Retornar con la estructura original
+            if (resultado?.results) {
+                return {
+                    ...resultado,
+                    results: proyectosEnriquecidos,
+                };
+            } else if (resultado?.data) {
+                return {
+                    ...resultado,
+                    data: {
+                        ...resultado.data,
+                        results: proyectosEnriquecidos,
+                    },
+                };
+            } else {
+                return {
+                    ...resultado,
+                    results: proyectosEnriquecidos,
+                };
+            }
+        }
+
+        return resultado;
     }
 }

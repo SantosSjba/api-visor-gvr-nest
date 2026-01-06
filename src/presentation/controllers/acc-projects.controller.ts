@@ -18,6 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
+import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
 
 // Use Cases
 import { GetProyectosUseCase } from '../../application/use-cases/acc/projects/get-proyectos.use-case';
@@ -189,11 +190,18 @@ export class AccProjectsController {
         const user = (request as any).user;
         const internalUserId = user?.sub || user?.id;
         const autodeskUserId = request.headers['user-id'] as string;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
 
         const resultado = await this.crearProyectoUseCase.execute(
             accountId,
             dto,
             autodeskUserId || internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.success(
@@ -221,11 +229,18 @@ export class AccProjectsController {
         const user = (request as any).user;
         const internalUserId = user?.sub || user?.id;
         const autodeskUserId = request.headers['user-id'] as string;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
 
         const resultado = await this.clonarProyectoUseCase.execute(
             accountId,
             dto,
             autodeskUserId || internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.success(
@@ -254,12 +269,19 @@ export class AccProjectsController {
         const user = (request as any).user;
         const internalUserId = user?.sub || user?.id;
         const autodeskUserId = request.headers['user-id'] as string;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
 
         const resultado = await this.actualizarProyectoUseCase.execute(
             accountId,
             projectId,
             dto,
             autodeskUserId || internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.success(
@@ -281,6 +303,7 @@ export class AccProjectsController {
         @Param('projectId') projectId: string,
         @UploadedFile() file: Express.Multer.File,
         @Body() dto: SubirImagenProyectoDto,
+        @Req() request: Request,
     ) {
         if (!accountId || !projectId) {
             throw new BadRequestException('Account ID y Project ID son requeridos');
@@ -290,11 +313,22 @@ export class AccProjectsController {
             throw new BadRequestException('La imagen es requerida');
         }
 
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
         const resultado = await this.subirImagenProyectoUseCase.execute(
             accountId,
             projectId,
             file,
             dto.token,
+            internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.success(

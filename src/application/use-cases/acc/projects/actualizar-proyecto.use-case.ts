@@ -1,14 +1,25 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { ActualizarProyectoDto } from '../../../dtos/acc/projects/actualizar-proyecto.dto';
+import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
 
 @Injectable()
 export class ActualizarProyectoUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
+        @Inject(AUDITORIA_REPOSITORY)
+        private readonly auditoriaRepository: IAuditoriaRepository,
     ) { }
 
-    async execute(accountId: string, projectId: string, dto: ActualizarProyectoDto, userId?: string): Promise<any> {
+    async execute(
+        accountId: string,
+        projectId: string,
+        dto: ActualizarProyectoDto,
+        userId?: string | number,
+        ipAddress?: string,
+        userAgent?: string,
+        userRole?: string,
+    ): Promise<any> {
         const projectData: Record<string, any> = {};
 
         if (dto.name) projectData.name = dto.name;
@@ -37,12 +48,81 @@ export class ActualizarProyectoUseCase {
             throw new BadRequestException('Debe proporcionar al menos un campo para actualizar');
         }
 
-        return await this.autodeskApiService.updateAccProject(
+        // Obtener datos anteriores antes de actualizar (para auditoría)
+        let datosAnteriores: any = null;
+        try {
+            const proyectoAnterior = await this.autodeskApiService.getAccProjectById(
+                projectId,
+                ['name', 'type', 'jobNumber', 'status'],
+                dto.token,
+            );
+            if (proyectoAnterior) {
+                datosAnteriores = {
+                    name: proyectoAnterior.name || null,
+                    type: proyectoAnterior.type || null,
+                    jobNumber: proyectoAnterior.jobNumber || null,
+                    status: proyectoAnterior.status || null,
+                };
+            }
+        } catch (error) {
+            // Si falla obtener datos anteriores, continuar sin ellos
+        }
+
+        // Convertir userId a string si es necesario (el servicio espera string)
+        const userIdString = userId ? (typeof userId === 'string' ? userId : userId.toString()) : undefined;
+
+        const resultado = await this.autodeskApiService.updateAccProject(
             accountId,
             projectId,
             projectData,
             dto.token,
-            userId,
+            userIdString,
         );
+
+        // Registrar auditoría si la actualización fue exitosa
+        // Obtener userId numérico para auditoría
+        let numericUserId: number | null = null;
+        if (userId) {
+            if (typeof userId === 'number') {
+                numericUserId = userId;
+            } else if (typeof userId === 'string') {
+                const parsed = parseInt(userId, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    numericUserId = parsed;
+                }
+            }
+        }
+
+        if (resultado && numericUserId && ipAddress && userAgent) {
+            try {
+                await this.auditoriaRepository.registrarAccion(
+                    numericUserId,
+                    'PROJECT_UPDATE',
+                    'project',
+                    null,
+                    `Proyecto actualizado: ${resultado.name || projectId}`,
+                    datosAnteriores,
+                    {
+                        projectId,
+                        accountId,
+                        name: resultado.name || null,
+                        type: resultado.type || null,
+                        jobNumber: resultado.jobNumber || null,
+                    },
+                    ipAddress,
+                    userAgent,
+                    {
+                        accountId,
+                        accProjectId: projectId,
+                        rol: userRole || null,
+                    },
+                );
+            } catch (error) {
+                // No fallar la operación si la auditoría falla
+                console.error('Error registrando auditoría de actualización de proyecto:', error);
+            }
+        }
+
+        return resultado;
     }
 }

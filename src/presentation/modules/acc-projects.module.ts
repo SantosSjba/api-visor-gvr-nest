@@ -20,9 +20,13 @@ import ObtenerTokenValidoHelper from '../../application/use-cases/acc/issues/obt
 // Repositories
 import { AccRepository } from '../../infrastructure/repositories/acc.repository';
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
+import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
+import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
+import { DatabaseModule } from '../../infrastructure/database/database.module';
 
 @Module({
+    imports: [DatabaseModule],
     controllers: [AccProjectsController],
     providers: [
         // Helpers
@@ -47,6 +51,10 @@ import { DatabaseFunctionService } from '../../infrastructure/database/database-
         {
             provide: ACC_REPOSITORY,
             useClass: AccRepository,
+        },
+        {
+            provide: AUDITORIA_REPOSITORY,
+            useClass: AuditoriaRepository,
         },
         DatabaseFunctionService,
     ],
