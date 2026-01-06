@@ -17,6 +17,8 @@ import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.s
 import { HttpClientService } from '../../shared/services/http-client.service';
 import { AccRepository } from '../../infrastructure/repositories/acc.repository';
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
+import { AccResourcesRepository } from '../../infrastructure/repositories/acc-resources.repository';
+import { ACC_RESOURCES_REPOSITORY } from '../../domain/repositories/acc-resources.repository.interface';
 
 @Module({
     imports: [DatabaseModule],
@@ -37,6 +39,10 @@ import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interfa
         {
             provide: ACC_REPOSITORY,
             useClass: AccRepository,
+        },
+        {
+            provide: ACC_RESOURCES_REPOSITORY,
+            useClass: AccResourcesRepository,
         },
     ],
 })

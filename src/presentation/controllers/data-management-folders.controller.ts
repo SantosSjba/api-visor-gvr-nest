@@ -35,6 +35,7 @@ import { CrearSubcarpetaUseCase } from '../../application/use-cases/data-managem
 import { CrearReferenciaCarpetaUseCase } from '../../application/use-cases/data-management/folders/crear-referencia-carpeta.use-case';
 import { ActualizarCarpetaUseCase } from '../../application/use-cases/data-management/folders/actualizar-carpeta.use-case';
 import { EliminarCarpetaUseCase } from '../../application/use-cases/data-management/folders/eliminar-carpeta.use-case';
+import { SincronizarCarpetasProyectoUseCase } from '../../application/use-cases/data-management/folders/sincronizar-carpetas-proyecto.use-case';
 
 // DTOs - Group 1
 import { ObtenerCarpetaPorIdDto } from '../../application/dtos/data-management/folders/obtener-carpeta-por-id.dto';
@@ -73,6 +74,7 @@ export class DataManagementFoldersController {
         private readonly crearReferenciaCarpetaUseCase: CrearReferenciaCarpetaUseCase,
         private readonly actualizarCarpetaUseCase: ActualizarCarpetaUseCase,
         private readonly eliminarCarpetaUseCase: EliminarCarpetaUseCase,
+        private readonly sincronizarCarpetasProyectoUseCase: SincronizarCarpetasProyectoUseCase,
     ) { }
 
     /**
@@ -147,7 +149,10 @@ export class DataManagementFoldersController {
         @Query() queryParams: any, // Usar any en lugar de DTO para permitir cualquier parámetro
     ) {
         const user = (request as any).user;
-        const resultado = await this.obtenerContenidoCarpetaUseCase.execute(user.sub, projectId, folderId, queryParams);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.obtenerContenidoCarpetaUseCase.execute(user.sub, projectId, folderId, queryParams, userRole);
 
         return ApiResponseDto.success(
             { ...resultado, data: resultado.data, links: resultado.links },
@@ -396,6 +401,26 @@ export class DataManagementFoldersController {
         return ApiResponseDto.success(
             resultado.data,
             'Carpeta actualizada exitosamente',
+        );
+    }
+
+    /**
+     * POST - Sincronizar todas las carpetas de un proyecto
+     * POST /data-management/folders/sync/:hubId/:projectId
+     */
+    @Post('sync/:hubId/:projectId')
+    @HttpCode(HttpStatus.OK)
+    async sincronizarCarpetasProyecto(
+        @Req() request: Request,
+        @Param('hubId') hubId: string,
+        @Param('projectId') projectId: string,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.sincronizarCarpetasProyectoUseCase.execute(user.sub, projectId, hubId);
+
+        return ApiResponseDto.success(
+            resultado,
+            resultado.message || 'Sincronización completada exitosamente',
         );
     }
 }

@@ -78,6 +78,7 @@ export interface ListarUsuariosDisponiblesRecursoParams {
 export interface IAccResourcesRepository {
     listarRecursos(params: ListarRecursosParams): Promise<ListarRecursosResponse>;
     obtenerRecursoPorId(id: number): Promise<any>;
+    obtenerRecursoPorExternalId(externalId: string): Promise<any>;
     crearRecurso(data: CrearRecursoData): Promise<any>;
     actualizarRecurso(id: number, data: ActualizarRecursoData): Promise<any>;
     eliminarRecurso(id: number, idUsuarioModificacion: number): Promise<any>;

@@ -20,6 +20,7 @@ import { CrearSubcarpetaUseCase } from '../../application/use-cases/data-managem
 import { CrearReferenciaCarpetaUseCase } from '../../application/use-cases/data-management/folders/crear-referencia-carpeta.use-case';
 import { ActualizarCarpetaUseCase } from '../../application/use-cases/data-management/folders/actualizar-carpeta.use-case';
 import { EliminarCarpetaUseCase } from '../../application/use-cases/data-management/folders/eliminar-carpeta.use-case';
+import { SincronizarCarpetasProyectoUseCase } from '../../application/use-cases/data-management/folders/sincronizar-carpetas-proyecto.use-case';
 
 // Infrastructure
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
@@ -28,6 +29,8 @@ import { AccRepository } from '../../infrastructure/repositories/acc.repository'
 import { ACC_REPOSITORY } from '../../domain/repositories/acc.repository.interface';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.repository.interface';
+import { AccResourcesRepository } from '../../infrastructure/repositories/acc-resources.repository';
+import { ACC_RESOURCES_REPOSITORY } from '../../domain/repositories/acc-resources.repository.interface';
 
 @Module({
     imports: [DatabaseModule],
@@ -49,6 +52,7 @@ import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.reposi
         CrearReferenciaCarpetaUseCase,
         ActualizarCarpetaUseCase,
         EliminarCarpetaUseCase,
+        SincronizarCarpetasProyectoUseCase,
         // Infrastructure
         AutodeskApiService,
         HttpClientService,
@@ -59,6 +63,10 @@ import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.reposi
         {
             provide: AUDITORIA_REPOSITORY,
             useClass: AuditoriaRepository,
+        },
+        {
+            provide: ACC_RESOURCES_REPOSITORY,
+            useClass: AccResourcesRepository,
         },
     ],
 })

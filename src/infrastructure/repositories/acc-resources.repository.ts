@@ -65,6 +65,23 @@ export class AccResourcesRepository implements IAccResourcesRepository {
         return result;
     }
 
+    async obtenerRecursoPorExternalId(externalId: string): Promise<any> {
+        // Buscar el recurso por externalId usando una query directa
+        const query = `
+            SELECT id, externalid, resourcetype, name, parentid, accountid, estado
+            FROM accresources
+            WHERE externalid = $1 AND estado = 1
+            LIMIT 1
+        `;
+        
+        const result = await this.databaseFunctionService.executeQuery<any>(
+            query,
+            [externalId],
+        );
+
+        return result.length > 0 ? result[0] : null;
+    }
+
     async crearRecurso(data: CrearRecursoData): Promise<any> {
         const result = await this.databaseFunctionService.callFunctionSingle<any>(
             'accCreateRecurso',
