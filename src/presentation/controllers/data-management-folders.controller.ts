@@ -15,6 +15,7 @@ import {
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
+import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
 
 // Use cases - Group 1
 import { ObtenerCarpetaPorIdUseCase } from '../../application/use-cases/data-management/folders/obtener-carpeta-por-id.use-case';
@@ -107,7 +108,18 @@ export class DataManagementFoldersController {
         @Param('folderId') folderId: string,
     ) {
         const user = (request as any).user;
-        const resultado = await this.eliminarCarpetaUseCase.execute(user.sub, projectId, folderId);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.eliminarCarpetaUseCase.execute(
+            user.sub,
+            projectId,
+            folderId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         const responseData = {
             folder: resultado.data || null,
@@ -281,7 +293,18 @@ export class DataManagementFoldersController {
         @Body() dto: CrearCarpetaDto,
     ) {
         const user = (request as any).user;
-        const resultado = await this.crearCarpetaUseCase.execute(user.sub, projectId, dto);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.crearCarpetaUseCase.execute(
+            user.sub,
+            projectId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.success(
             resultado.data,
@@ -302,7 +325,19 @@ export class DataManagementFoldersController {
         @Body() dto: CrearSubcarpetaDto,
     ) {
         const user = (request as any).user;
-        const resultado = await this.crearSubcarpetaUseCase.execute(user.sub, projectId, parentFolderId, dto);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.crearSubcarpetaUseCase.execute(
+            user.sub,
+            projectId,
+            parentFolderId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.success(
             resultado.data,
@@ -344,7 +379,19 @@ export class DataManagementFoldersController {
         @Body() dto: ActualizarCarpetaDto,
     ) {
         const user = (request as any).user;
-        const resultado = await this.actualizarCarpetaUseCase.execute(user.sub, projectId, folderId, dto);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.actualizarCarpetaUseCase.execute(
+            user.sub,
+            projectId,
+            folderId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.success(
             resultado.data,
