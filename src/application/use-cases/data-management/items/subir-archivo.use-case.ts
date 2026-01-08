@@ -1,6 +1,7 @@
 import { Injectable, Inject, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { ACC_REPOSITORY, type IAccRepository } from '../../../../domain/repositories/acc.repository.interface';
+import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
 import type { Express } from 'express';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class SubirArchivoUseCase {
         private readonly autodeskApiService: AutodeskApiService,
         @Inject(ACC_REPOSITORY)
         private readonly accRepository: IAccRepository,
+        @Inject(AUDITORIA_REPOSITORY)
+        private readonly auditoriaRepository: IAuditoriaRepository,
     ) { }
 
     async execute(
@@ -16,6 +19,9 @@ export class SubirArchivoUseCase {
         projectId: string,
         folderId: string,
         file: Express.Multer.File,
+        ipAddress?: string,
+        userAgent?: string,
+        userRole?: string,
     ): Promise<any> {
         // Validaciones
         if (!projectId) {
@@ -152,6 +158,42 @@ export class SubirArchivoUseCase {
             projectId,
             itemData,
         );
+
+        const itemId = itemResult.data?.id;
+        const itemName = itemResult.data?.attributes?.displayName || fileName;
+
+        // Registrar auditoría si el archivo se subió exitosamente
+        if (itemId && ipAddress && userAgent) {
+            try {
+                await this.auditoriaRepository.registrarAccion(
+                    userId,
+                    'FILE_UPLOAD',
+                    'file',
+                    null, // No usar el ID de ACC como identidad porque es string
+                    `Archivo subido: ${itemName.substring(0, 100)}`,
+                    null,
+                    {
+                        itemId,
+                        projectId,
+                        folderId,
+                        fileName: itemName.substring(0, 100),
+                        fileSize: file.size,
+                        mimeType: file.mimetype || 'unknown',
+                    },
+                    ipAddress,
+                    userAgent,
+                    {
+                        projectId,
+                        accItemId: itemId, // ID del archivo de ACC (string/UUID)
+                        accFolderId: folderId,
+                        rol: userRole || null,
+                    },
+                );
+            } catch (error) {
+                // No fallar la operación si la auditoría falla
+                console.error('Error registrando auditoría de subida de archivo:', error);
+            }
+        }
 
         return {
             success: true,

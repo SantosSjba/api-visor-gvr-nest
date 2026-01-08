@@ -19,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
+import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
 
 // Use cases - Grupo 1
 import { ObtenerItemPorIdUseCase } from '../../application/use-cases/data-management/items/obtener-item-por-id.use-case';
@@ -81,11 +82,18 @@ export class DataManagementItemsController {
         @Body() dto: SubirArchivoDto,
     ) {
         const user = (request as any).user;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
         const resultado = await this.subirArchivoUseCase.execute(
             user.sub,
             projectId,
             dto.folderId,
             file,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
         );
 
         return ApiResponseDto.success(
@@ -157,7 +165,19 @@ export class DataManagementItemsController {
         @Res() res: Response,
     ) {
         const user = (request as any).user;
-        const resultado = await this.descargarItemUseCase.execute(user.sub, projectId, itemId, queryParams);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.descargarItemUseCase.execute(
+            user.sub,
+            projectId,
+            itemId,
+            queryParams,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         res.set({
             'Content-Type': 'application/octet-stream',
@@ -328,7 +348,19 @@ export class DataManagementItemsController {
         @Body() dto: ActualizarItemDto,
     ) {
         const user = (request as any).user;
-        const resultado = await this.actualizarItemUseCase.execute(user.sub, projectId, itemId, dto);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.actualizarItemUseCase.execute(
+            user.sub,
+            projectId,
+            itemId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         return ApiResponseDto.success(
             resultado.data,
@@ -348,7 +380,18 @@ export class DataManagementItemsController {
         @Param('itemId') itemId: string,
     ) {
         const user = (request as any).user;
-        const resultado = await this.eliminarItemUseCase.execute(user.sub, projectId, itemId);
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.eliminarItemUseCase.execute(
+            user.sub,
+            projectId,
+            itemId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
 
         const message = resultado.message
             || (resultado.wasAlreadyDeleted

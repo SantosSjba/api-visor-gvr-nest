@@ -123,7 +123,10 @@ export class DataManagementProjectsController {
         @Query() dto: ObtenerCarpetasPrincipalesDto,
     ) {
         const user = (request as any).user;
-        const resultado = await this.obtenerCarpetasPrincipalesUseCase.execute(user.sub, hubId, projectId, dto);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.obtenerCarpetasPrincipalesUseCase.execute(user.sub, hubId, projectId, dto, userRole);
 
         return ApiResponseDto.success(
             { ...resultado, data: resultado.data, links: resultado.links },

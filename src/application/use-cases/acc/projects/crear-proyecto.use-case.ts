@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { AutodeskApiService } from '../../../../infrastructure/services/autodesk-api.service';
 import { CrearProyectoDto } from '../../../dtos/acc/projects/crear-proyecto.dto';
+import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
+import { ACC_RESOURCES_REPOSITORY, type IAccResourcesRepository } from '../../../../domain/repositories/acc-resources.repository.interface';
 import ObtenerTokenValidoHelper from '../issues/obtener-token-valido.helper';
 
 @Injectable()
@@ -8,9 +10,20 @@ export class CrearProyectoUseCase {
     constructor(
         private readonly autodeskApiService: AutodeskApiService,
         private readonly obtenerTokenValidoHelper: ObtenerTokenValidoHelper,
+        @Inject(AUDITORIA_REPOSITORY)
+        private readonly auditoriaRepository: IAuditoriaRepository,
+        @Inject(ACC_RESOURCES_REPOSITORY)
+        private readonly accResourcesRepository: IAccResourcesRepository,
     ) { }
 
-    async execute(accountId: string, dto: CrearProyectoDto, userId?: string | number): Promise<any> {
+    async execute(
+        accountId: string,
+        dto: CrearProyectoDto,
+        userId?: string | number,
+        ipAddress?: string,
+        userAgent?: string,
+        userRole?: string,
+    ): Promise<any> {
         let accessToken = dto.token;
 
         // Si tenemos un userId, intentamos obtener su token 3-legged
@@ -59,11 +72,90 @@ export class CrearProyectoUseCase {
             autodeskUserId = userId;
         }
 
-        return await this.autodeskApiService.createAccProject(
+        const resultado = await this.autodeskApiService.createAccProject(
             accountId,
             projectData,
             accessToken,
             autodeskUserId,
         );
+
+        // Registrar auditoría si el proyecto se creó exitosamente
+        const projectId = resultado?.id;
+        const projectName = dto.name || 'Nuevo proyecto';
+
+        // Obtener userId numérico para auditoría
+        let numericUserId: number | null = null;
+        if (userId) {
+            if (typeof userId === 'number') {
+                numericUserId = userId;
+            } else if (typeof userId === 'string') {
+                const parsed = parseInt(userId, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    numericUserId = parsed;
+                }
+            }
+        }
+
+        if (projectId && numericUserId && ipAddress && userAgent) {
+            try {
+                // Registrar auditoría
+                await this.auditoriaRepository.registrarAccion(
+                    numericUserId,
+                    'PROJECT_CREATE',
+                    'project',
+                    null,
+                    `Proyecto creado: ${projectName.substring(0, 100)}`,
+                    null,
+                    {
+                        projectId,
+                        accountId,
+                        projectName: projectName.substring(0, 100),
+                        type: dto.type || null,
+                        jobNumber: dto.jobNumber || null,
+                    },
+                    ipAddress,
+                    userAgent,
+                    {
+                        accountId,
+                        accProjectId: projectId,
+                        rol: userRole || null,
+                    },
+                );
+
+                // Crear o obtener el recurso del proyecto
+                try {
+                    const recursoResult = await this.accResourcesRepository.crearRecurso({
+                        external_id: projectId,
+                        resource_type: 'project',
+                        name: projectName.substring(0, 255),
+                        parent_id: undefined,
+                        account_id: accountId,
+                        idUsuarioCreacion: numericUserId,
+                    });
+
+                    // Si el recurso se creó/obtuvo exitosamente, asignar permiso al usuario creador
+                    if (recursoResult && recursoResult.success && recursoResult.id) {
+                        try {
+                            await this.accResourcesRepository.asignarPermisoUsuario({
+                                user_id: numericUserId,
+                                resource_id: recursoResult.id,
+                                idUsuarioCreacion: numericUserId,
+                            });
+                        } catch (permisoError) {
+                            // No fallar si el permiso ya existe o hay algún error
+                            console.warn('Error asignando permiso automático al creador:', permisoError);
+                        }
+                    }
+                } catch (recursoError) {
+                    // No fallar la operación si la creación del recurso falla
+                    console.warn('Error creando recurso del proyecto:', recursoError);
+                }
+            } catch (error) {
+                // No fallar la operación si la auditoría falla
+                console.error('Error registrando auditoría de creación de proyecto:', error);
+            }
+        }
+
+        return resultado;
     }
 }
