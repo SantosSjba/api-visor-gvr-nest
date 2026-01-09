@@ -78,6 +78,7 @@ export interface ListarUsuariosDisponiblesRecursoParams {
 export interface SincronizarPermisosProyectoData {
     project_resource_id: number;
     idUsuarioModificacion: number;
+    roles_ids?: number[]; // IDs de roles para filtrar (opcional)
 }
 
 export interface IAccResourcesRepository {
