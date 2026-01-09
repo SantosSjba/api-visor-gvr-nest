@@ -16,8 +16,12 @@ export class SincronizarCarpetasProyectoUseCase {
     /**
      * Sincroniza todas las carpetas de un proyecto recursivamente
      * y asigna permisos por defecto a todos los usuarios con acceso al proyecto
+     * @param userId - ID del usuario que ejecuta la sincronización
+     * @param projectId - ID del proyecto
+     * @param hubId - ID del hub
+     * @param rolesIds - IDs de roles para filtrar usuarios (opcional)
      */
-    async execute(userId: number, projectId: string, hubId: string): Promise<any> {
+    async execute(userId: number, projectId: string, hubId: string, rolesIds?: number[]): Promise<any> {
         const token = await this.accRepository.obtenerToken3LeggedPorUsuario(userId);
 
         if (!token) {
@@ -127,6 +131,7 @@ export class SincronizarCarpetasProyectoUseCase {
             const resultadoPermisos = await this.accResourcesRepository.sincronizarPermisosProyecto({
                 project_resource_id: proyectoResourceId,
                 idUsuarioModificacion: userId,
+                roles_ids: rolesIds, // Pasar filtro de roles
             });
 
             if (resultadoPermisos?.success) {

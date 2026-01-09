@@ -331,6 +331,7 @@ export class AccResourcesRepository implements IAccResourcesRepository {
             [
                 data.project_resource_id,
                 data.idUsuarioModificacion,
+                data.roles_ids || null, // Si no hay roles, pasar null
             ],
         );
 

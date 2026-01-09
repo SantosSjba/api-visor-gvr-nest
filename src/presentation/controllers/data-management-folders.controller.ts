@@ -407,6 +407,7 @@ export class DataManagementFoldersController {
     /**
      * POST - Sincronizar todas las carpetas de un proyecto
      * POST /data-management/folders/sync/:hubId/:projectId
+     * Body (opcional): { roles_ids: [1, 2, 3] }
      */
     @Post('sync/:hubId/:projectId')
     @HttpCode(HttpStatus.OK)
@@ -414,9 +415,11 @@ export class DataManagementFoldersController {
         @Req() request: Request,
         @Param('hubId') hubId: string,
         @Param('projectId') projectId: string,
+        @Body() body?: { roles_ids?: number[] },
     ) {
         const user = (request as any).user;
-        const resultado = await this.sincronizarCarpetasProyectoUseCase.execute(user.sub, projectId, hubId);
+        const rolesIds = body?.roles_ids;
+        const resultado = await this.sincronizarCarpetasProyectoUseCase.execute(user.sub, projectId, hubId, rolesIds);
 
         return ApiResponseDto.success(
             resultado,
