@@ -307,7 +307,7 @@ export class AccResourcesRepository implements IAccResourcesRepository {
 
     async actualizarNivelPermisoUsuario(data: ActualizarNivelPermisoUsuarioData): Promise<any> {
         const result = await this.databaseFunctionService.callFunctionSingle<any>(
-            'accActualizarNivelPermiso_Usuario',
+            'accactualizarnivelpermiso_usuario',
             [
                 data.userAccAccessId,
                 data.permission_level_id,
