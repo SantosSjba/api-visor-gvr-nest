@@ -133,17 +133,25 @@ export class CrearProyectoUseCase {
                         idUsuarioCreacion: numericUserId,
                     });
 
-                    // Si el recurso se creó/obtuvo exitosamente, asignar permiso al usuario creador
+                    // Si el recurso se creó/obtuvo exitosamente, asignar permiso de ADMINISTRADOR al usuario creador
                     if (recursoResult && recursoResult.success && recursoResult.id) {
                         try {
+                            // Obtener el nivel de permiso de administrador dinámicamente
+                            const nivelesPermiso = await this.accResourcesRepository.listarNivelesPermiso();
+                            const nivelAdmin = nivelesPermiso.data?.find(
+                                (nivel: any) => nivel.code === 'admin' || nivel.code?.toLowerCase() === 'admin'
+                            );
+                            const adminLevelId = nivelAdmin?.id || 6; // Fallback a 6 si no se encuentra
+
                             await this.accResourcesRepository.asignarPermisoUsuario({
                                 user_id: numericUserId,
                                 resource_id: recursoResult.id,
+                                permission_level_id: adminLevelId,
                                 idUsuarioCreacion: numericUserId,
                             });
                         } catch (permisoError) {
                             // No fallar si el permiso ya existe o hay algún error
-                            console.warn('Error asignando permiso automático al creador:', permisoError);
+                            console.warn('Error asignando permiso automático al creador:', permisoError.message);
                         }
                     }
                 } catch (recursoError) {
