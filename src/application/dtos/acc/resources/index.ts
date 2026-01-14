@@ -6,6 +6,8 @@ export { AsignarPermisoDto } from './asignar-permiso.dto';
 export { SincronizarPermisosRolDto } from './sincronizar-permisos-rol.dto';
 export { ListarPermisosUsuarioDto } from './listar-permisos-usuario.dto';
 export { AsignarPermisoUsuarioDto } from './asignar-permiso-usuario.dto';
+export { ActualizarNivelPermisoUsuarioDto } from './actualizar-nivel-permiso-usuario.dto';
 export { SincronizarPermisosUsuarioDto } from './sincronizar-permisos-usuario.dto';
 export { ListarUsuariosDisponiblesRecursoDto } from './listar-usuarios-disponibles-recurso.dto';
+export { ListarNivelesPermisoDto } from './listar-niveles-permiso.dto';
 

@@ -3,6 +3,7 @@ import {
     Get,
     Post,
     Put,
+    Patch,
     Delete,
     Body,
     Param,
@@ -31,8 +32,10 @@ import {
     ListarUsuariosRecursoUseCase,
     ListarUsuariosDisponiblesRecursoUseCase,
     AsignarPermisoUsuarioUseCase,
+    ActualizarNivelPermisoUsuarioUseCase,
     RemoverPermisoUsuarioUseCase,
     SincronizarPermisosUsuarioUseCase,
+    ListarNivelesPermisoUseCase,
 } from '../../application/use-cases/acc/resources';
 import {
     ListarRecursosDto,
@@ -43,6 +46,7 @@ import {
     SincronizarPermisosRolDto,
     ListarPermisosUsuarioDto,
     AsignarPermisoUsuarioDto,
+    ActualizarNivelPermisoUsuarioDto,
     SincronizarPermisosUsuarioDto,
     ListarUsuariosDisponiblesRecursoDto,
 } from '../../application/dtos/acc/resources';
@@ -65,9 +69,26 @@ export class AccResourcesController {
         private readonly listarUsuariosRecursoUseCase: ListarUsuariosRecursoUseCase,
         private readonly listarUsuariosDisponiblesRecursoUseCase: ListarUsuariosDisponiblesRecursoUseCase,
         private readonly asignarPermisoUsuarioUseCase: AsignarPermisoUsuarioUseCase,
+        private readonly actualizarNivelPermisoUsuarioUseCase: ActualizarNivelPermisoUsuarioUseCase,
         private readonly removerPermisoUsuarioUseCase: RemoverPermisoUsuarioUseCase,
         private readonly sincronizarPermisosUsuarioUseCase: SincronizarPermisosUsuarioUseCase,
+        private readonly listarNivelesPermisoUseCase: ListarNivelesPermisoUseCase,
     ) { }
+
+    /**
+     * GET - Listar niveles de permisos disponibles
+     * GET /acc/resources/permission-levels
+     * IMPORTANTE: Esta ruta debe ir ANTES de las rutas con parámetros dinámicos
+     */
+    @Get('permission-levels')
+    @HttpCode(HttpStatus.OK)
+    async listPermissionLevels() {
+        const resultado = await this.listarNivelesPermisoUseCase.execute();
+        return ApiResponseDto.success(
+            resultado.data,
+            'Niveles de permisos listados exitosamente',
+        );
+    }
 
     /**
      * GET - Listar recursos ACC con paginación y búsqueda
@@ -394,7 +415,7 @@ export class AccResourcesController {
     }
 
     /**
-     * POST - Asignar permiso de recurso a usuario
+     * POST - Asignar permiso de recurso a usuario (con nivel de permiso)
      * POST /acc/resources/users/permissions
      */
     @Post('users/permissions')
@@ -407,6 +428,36 @@ export class AccResourcesController {
         return ApiResponseDto.created(
             { id: resultado.id },
             resultado.message || 'Permiso asignado exitosamente',
+        );
+    }
+
+    /**
+     * PATCH - Actualizar nivel de permiso de un usuario
+     * PATCH /acc/resources/users/permissions/:id/level
+     */
+    @Patch('users/permissions/:id/level')
+    @HttpCode(HttpStatus.OK)
+    async updateUserPermissionLevel(
+        @Param('id') id: string,
+        @Body() dto: ActualizarNivelPermisoUsuarioDto,
+        @Req() request: Request,
+    ) {
+        const permissionId = parseInt(id, 10);
+        if (isNaN(permissionId)) {
+            throw new BadRequestException('El ID del permiso debe ser un número válido');
+        }
+
+        const user = (request as any).user;
+        const userId = user?.sub || user?.id || 1;
+
+        const resultado = await this.actualizarNivelPermisoUsuarioUseCase.execute(
+            permissionId,
+            dto,
+            userId,
+        );
+        return ApiResponseDto.success(
+            null,
+            resultado.message || 'Nivel de permiso actualizado exitosamente',
         );
     }
 

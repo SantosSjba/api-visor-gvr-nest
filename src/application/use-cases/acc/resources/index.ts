@@ -12,6 +12,8 @@ export { ListarPermisosUsuarioUseCase } from './listar-permisos-usuario.use-case
 export { ListarUsuariosRecursoUseCase } from './listar-usuarios-recurso.use-case';
 export { ListarUsuariosDisponiblesRecursoUseCase } from './listar-usuarios-disponibles-recurso.use-case';
 export { AsignarPermisoUsuarioUseCase } from './asignar-permiso-usuario.use-case';
+export { ActualizarNivelPermisoUsuarioUseCase } from './actualizar-nivel-permiso-usuario.use-case';
 export { RemoverPermisoUsuarioUseCase } from './remover-permiso-usuario.use-case';
 export { SincronizarPermisosUsuarioUseCase } from './sincronizar-permisos-usuario.use-case';
+export { ListarNivelesPermisoUseCase } from './listar-niveles-permiso.use-case';
 

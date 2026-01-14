@@ -59,7 +59,14 @@ export interface ListarPermisosUsuarioParams {
 export interface AsignarPermisoUsuarioData {
     user_id: number;
     resource_id: number;
+    permission_level_id?: number; // Nivel de permiso (opcional, default: 2)
     idUsuarioCreacion: number;
+}
+
+export interface ActualizarNivelPermisoUsuarioData {
+    userAccAccessId: number;
+    permission_level_id: number;
+    idUsuarioModificacion: number;
 }
 
 export interface SincronizarPermisosUsuarioData {
@@ -98,9 +105,12 @@ export interface IAccResourcesRepository {
     listarUsuariosRecurso(resourceId: number): Promise<any>;
     listarUsuariosDisponiblesRecurso(params: ListarUsuariosDisponiblesRecursoParams): Promise<any>;
     asignarPermisoUsuario(data: AsignarPermisoUsuarioData): Promise<any>;
+    actualizarNivelPermisoUsuario(data: ActualizarNivelPermisoUsuarioData): Promise<any>;
     removerPermisoUsuario(id: number, idUsuarioModificacion: number): Promise<any>;
     sincronizarPermisosUsuario(data: SincronizarPermisosUsuarioData): Promise<any>;
     sincronizarPermisosProyecto(data: SincronizarPermisosProyectoData): Promise<any>;
+    // Métodos para niveles de permiso
+    listarNivelesPermiso(): Promise<any>;
 }
 
 export const ACC_RESOURCES_REPOSITORY = 'ACC_RESOURCES_REPOSITORY';

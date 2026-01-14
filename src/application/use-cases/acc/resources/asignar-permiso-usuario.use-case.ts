@@ -14,6 +14,7 @@ export class AsignarPermisoUsuarioUseCase {
         const resultado = await this.accResourcesRepository.asignarPermisoUsuario({
             user_id: dto.user_id,
             resource_id: dto.resource_id,
+            permission_level_id: dto.permission_level_id || 2, // Default: view_download
             idUsuarioCreacion,
         });
 

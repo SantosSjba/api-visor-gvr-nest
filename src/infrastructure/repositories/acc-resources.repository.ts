@@ -10,6 +10,7 @@ import type {
     SincronizarPermisosRolData,
     ListarPermisosUsuarioParams,
     AsignarPermisoUsuarioData,
+    ActualizarNivelPermisoUsuarioData,
     SincronizarPermisosUsuarioData,
     ListarUsuariosDisponiblesRecursoParams,
     SincronizarPermisosProyectoData,
@@ -296,7 +297,21 @@ export class AccResourcesRepository implements IAccResourcesRepository {
             [
                 data.user_id,
                 data.resource_id,
+                data.permission_level_id || 2, // Default: view_download
                 data.idUsuarioCreacion,
+            ],
+        );
+
+        return result;
+    }
+
+    async actualizarNivelPermisoUsuario(data: ActualizarNivelPermisoUsuarioData): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accactualizarnivelpermiso_usuario',
+            [
+                data.userAccAccessId,
+                data.permission_level_id,
+                data.idUsuarioModificacion,
             ],
         );
 
@@ -336,6 +351,17 @@ export class AccResourcesRepository implements IAccResourcesRepository {
         );
 
         return result;
+    }
+
+    async listarNivelesPermiso(): Promise<any> {
+        const result = await this.databaseFunctionService.callFunction<any>(
+            'accListarPermissionLevels',
+            [],
+        );
+
+        return {
+            data: result || [],
+        };
     }
 }
 
