@@ -1902,7 +1902,26 @@ export class AutodeskApiService {
             delete cleanFilters.include;
 
             if (Object.keys(cleanFilters).length > 0) {
-                url += '?' + new URLSearchParams(cleanFilters as any).toString();
+                // Construir query string manualmente para soportar arrays con corchetes
+                const queryParams: string[] = [];
+                for (const [key, value] of Object.entries(cleanFilters)) {
+                    if (value !== undefined && value !== null) {
+                        // Si la clave termina con '[]', es un array
+                        if (key.endsWith('[]')) {
+                            // Para arrays, agregar cada valor con la misma clave
+                            const arrayKey = key;
+                            const arrayValues = Array.isArray(value) ? value : [value];
+                            arrayValues.forEach((val) => {
+                                queryParams.push(`${encodeURIComponent(arrayKey)}=${encodeURIComponent(String(val))}`);
+                            });
+                        } else {
+                            queryParams.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+                        }
+                    }
+                }
+                if (queryParams.length > 0) {
+                    url += '?' + queryParams.join('&');
+                }
             }
 
             const response = await this.httpClient.get<any>(url, {

@@ -23,6 +23,10 @@ export class ObtenerIncidenciasDto {
     filter_locationId?: string;
 
     @IsOptional()
+    @IsString()
+    filter_linkedDocumentUrn?: string;
+
+    @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)

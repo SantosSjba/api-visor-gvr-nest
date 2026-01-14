@@ -25,11 +25,58 @@ export class ObtenerIncidenciasUseCase {
         if (dto.filter_issueTypeId) filters['filter[issueTypeId]'] = dto.filter_issueTypeId;
         if (dto.filter_rootCauseId) filters['filter[rootCauseId]'] = dto.filter_rootCauseId;
         if (dto.filter_locationId) filters['filter[locationId]'] = dto.filter_locationId;
+        // Filtro por documento vinculado
+        // Nota: Autodesk puede requerir el formato sin corchetes o con formato específico
+        // Si falla, se puede intentar filtrar manualmente en el código
+        if (dto.filter_linkedDocumentUrn) {
+            // Intentar primero con el formato estándar (sin corchetes)
+            filters['filter[linkedDocumentUrn]'] = dto.filter_linkedDocumentUrn;
+        }
         if (dto.limit) filters.limit = dto.limit.toString();
         if (dto.offset) filters.offset = dto.offset.toString();
         if (dto.sort) filters.sort = dto.sort;
 
-        const resultado = await this.autodeskApiService.obtenerIncidencias(accessToken, projectId, filters);
+        let resultado: any;
+        
+        try {
+            resultado = await this.autodeskApiService.obtenerIncidencias(accessToken, projectId, filters);
+        } catch (error: any) {
+            // Si el filtro de linkedDocumentUrn causa un error, intentar sin ese filtro y filtrar manualmente
+            const filterUrn = dto.filter_linkedDocumentUrn;
+            if (filterUrn && error.message?.includes('500')) {
+                const filtersWithoutLinkedDoc = { ...filters };
+                delete filtersWithoutLinkedDoc['filter[linkedDocumentUrn]'];
+                
+                resultado = await this.autodeskApiService.obtenerIncidencias(accessToken, projectId, filtersWithoutLinkedDoc);
+                
+                // Filtrar manualmente por documento vinculado
+                const incidencias = resultado?.data?.results || resultado?.results || [];
+                const filteredIssues = incidencias.filter((issue: any) => {
+                    if (!issue.linkedDocuments || issue.linkedDocuments.length === 0) {
+                        return false;
+                    }
+                    return issue.linkedDocuments.some((doc: any) => {
+                        const docUrn = doc.urn || '';
+                        // Comparar URNs (puede ser exacto o parcial)
+                        return docUrn === filterUrn || 
+                               docUrn.includes(filterUrn) || 
+                               filterUrn.includes(docUrn);
+                    });
+                });
+                
+                // Reemplazar los resultados con los filtrados
+                if (resultado?.data) {
+                    resultado.data.results = filteredIssues;
+                    if (resultado.data.pagination) {
+                        resultado.data.pagination.totalResults = filteredIssues.length;
+                    }
+                } else {
+                    resultado.results = filteredIssues;
+                }
+            } else {
+                throw error;
+            }
+        }
 
         // Enriquecer incidencias con información del usuario real desde auditoría
         // La estructura puede ser: { data: { results: [...] } } o { results: [...] }
