@@ -372,8 +372,11 @@ export class AutodeskApiService {
                 throw new Error('El ID del item es requerido');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}`;
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}`;
 
             const response = await this.httpClient.get<any>(url, {
                 headers: {
@@ -407,8 +410,11 @@ export class AutodeskApiService {
                 throw new Error('El ID del item es requerido');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}/versions`;
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}/versions`;
 
             const response = await this.httpClient.get<any>(url, {
                 headers: {
@@ -736,8 +742,11 @@ export class AutodeskApiService {
                 throw new Error('Token, projectId y folderId son requeridos');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}`;
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/folders/${encodeURIComponent(folderId)}`;
 
             const response = await this.httpClient.get<any>(url, {
                 headers: {
@@ -1127,8 +1136,11 @@ export class AutodeskApiService {
                 throw new Error('Token, projectId, folderId y updateData son requeridos');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}`;
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/folders/${encodeURIComponent(folderId)}`;
 
             const body = {
                 jsonapi: { version: '1.0' },
@@ -3129,7 +3141,7 @@ export class AutodeskApiService {
     /**
      * Crea una nueva versión
      */
-    async crearVersion(accessToken: string, projectId: string, versionData: Record<string, any>): Promise<any> {
+    async crearVersion(accessToken: string, projectId: string, versionData: Record<string, any>, copyFrom?: string): Promise<any> {
         try {
             if (!accessToken) {
                 throw new Error('El token de acceso es requerido');
@@ -3141,8 +3153,16 @@ export class AutodeskApiService {
                 throw new Error('Los datos de la versión son requeridos');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/versions`;
+            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/versions`;
+            
+            // Si se proporciona copyFrom, agregarlo como query parameter
+            if (copyFrom) {
+                url += `?copyFrom=${encodeURIComponent(copyFrom)}`;
+            }
 
             const body = {
                 jsonapi: { version: '1.0' },
@@ -5237,8 +5257,11 @@ export class AutodeskApiService {
                 throw new Error('Token, projectId, itemId y itemData son requeridos');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/items/${encodeURIComponent(itemId)}`;
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}`;
 
             const response = await this.httpClient.patch<any>(url, itemData, {
                 headers: {
