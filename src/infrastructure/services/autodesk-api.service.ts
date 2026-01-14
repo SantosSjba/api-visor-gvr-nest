@@ -815,14 +815,17 @@ export class AutodeskApiService {
                 throw new Error('Token, projectId y folderId son requeridos');
             }
 
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
             const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(projectId)}/folders/${encodeURIComponent(folderId)}/contents`;
+            // Usar el endpoint /contents que es más confiable para obtener el contenido de una carpeta
+            // El endpoint /search tiene problemas conocidos con filtros de displayName
+            let url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/folders/${encodeURIComponent(folderId)}/contents`;
 
             const params: Record<string, string> = { ...additionalFilters };
 
-            if (searchName) {
-                params['filter[displayName]'] = searchName;
-            }
+            // Aplicar filtros que sí funcionan en /contents
             if (filterType) {
                 params['filter[type]'] = filterType;
             }
@@ -840,8 +843,22 @@ export class AutodeskApiService {
                 },
             });
 
+            let allData = response.data.data || [];
+
+            // Si hay un término de búsqueda, filtrar del lado del cliente
+            // Esto es necesario porque Autodesk no soporta bien el filtro por displayName
+            if (searchName && searchName.trim()) {
+                const searchTermLower = searchName.trim().toLowerCase();
+                allData = allData.filter((item: any) => {
+                    // Buscar en displayName y name (case-insensitive, búsqueda parcial)
+                    const displayName = (item.attributes?.displayName || '').toLowerCase();
+                    const name = (item.attributes?.name || '').toLowerCase();
+                    return displayName.includes(searchTermLower) || name.includes(searchTermLower);
+                });
+            }
+
             return {
-                data: response.data.data || [],
+                data: allData,
                 links: response.data.links || {},
             };
         } catch (error: any) {
