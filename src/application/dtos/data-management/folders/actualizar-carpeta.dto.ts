@@ -7,6 +7,7 @@ export class ActualizarCarpetaDto {
         type: string;
         id: string;
         attributes: {
+            displayName?: string;
             name?: string;
             hidden?: boolean;
         };
