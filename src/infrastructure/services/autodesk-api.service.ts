@@ -399,6 +399,11 @@ export class AutodeskApiService {
      * Obtiene las versiones de un item específico
      */
     async obtenerVersionesItem(accessToken: string, projectId: string, itemId: string): Promise<any> {
+        // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+        const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+        const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+        const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}/versions`;
+
         try {
             if (!accessToken) {
                 throw new Error('El token de acceso es requerido');
@@ -410,25 +415,39 @@ export class AutodeskApiService {
                 throw new Error('El ID del item es requerido');
             }
 
-            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
-            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
-
-            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
-            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}/versions`;
-
             const response = await this.httpClient.get<any>(url, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
                 },
             });
+
+            // Verificar que la respuesta tenga la estructura esperada
+            if (!response || !response.data) {
+                throw new Error('La respuesta de Autodesk API no tiene el formato esperado');
+            }
 
             return {
                 data: response.data.data || [],
                 links: response.data.links || {},
             };
         } catch (error: any) {
+            // Log del error para debugging
+            const errorMessage = error.response?.data?.message 
+                || error.response?.data?.developerMessage 
+                || error.message 
+                || 'Error desconocido al obtener versiones';
+            
+            const errorDetails = {
+                message: errorMessage,
+                status: error.response?.status,
+                url: url,
+                projectId: projectId,
+                itemId: itemId,
+            };
+
             throw new Error(
-                `Error al obtener versiones: ${error.response?.data?.message || error.message}`,
+                `Error al obtener versiones de Autodesk: ${errorMessage}. Detalles: ${JSON.stringify(errorDetails)}`,
             );
         }
     }

@@ -207,6 +207,9 @@ export class CrearIncidenciaUseCase {
                         projectId,
                         accIssueId: issueId, // ID de la incidencia de ACC (string/UUID)
                         rol: userRole || null, // Rol del usuario al momento de crear la incidencia
+                        // Guardar información del archivo vinculado si existe
+                        itemId: dto.itemId || null,
+                        documentUrn: dto.documentUrn || null,
                     },
                 );
             } catch (error) {

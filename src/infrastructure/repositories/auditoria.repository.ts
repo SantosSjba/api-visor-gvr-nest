@@ -135,6 +135,65 @@ export class AuditoriaRepository implements IAuditoriaRepository {
         return result || null;
     }
 
+    async obtenerAuditoriasPorItemId(itemId: string): Promise<any[]> {
+        // Buscar todas las auditorías relacionadas con un archivo específico:
+        // 1. Auditorías de archivo usando accItemId en metadatos
+        // 2. Auditorías de incidencias vinculadas al archivo (usando documentUrn o itemId en metadatos)
+        const query = `
+            SELECT 
+                a.id,
+                a.idusuario,
+                u.nombre as usuario,
+                COALESCE(
+                    (SELECT r.nombre 
+                     FROM authusuariosroles ur
+                     INNER JOIN authroles r ON ur.idrol = r.id
+                     WHERE ur.idusuario = a.idusuario 
+                       AND ur.estado = 1 
+                       AND r.estado = 1
+                     ORDER BY ur.fechacreacion DESC
+                     LIMIT 1),
+                    a.metadatos->>'rol',
+                    'Sin rol'
+                ) as rol,
+                a.accion,
+                a.descripcion,
+                a.datosanteriores as datos_anteriores,
+                a.datosnuevos as datos_nuevos,
+                a.ipaddress as ip_address,
+                a.useragent as user_agent,
+                a.metadatos,
+                a.fechacreacion,
+                a.entidad
+            FROM audauditoria a
+            LEFT JOIN authusuarios u ON a.idusuario = u.id
+            WHERE a.estado = 1
+                AND (
+                    -- Auditorías de archivo directamente (usando accItemId en metadatos)
+                    (a.entidad = 'file' AND a.metadatos->>'accItemId' = $1)
+                    OR
+                    -- Auditorías de incidencias vinculadas al archivo
+                    (a.entidad = 'issue' AND a.accion = 'ISSUE_CREATE' 
+                     AND (
+                         -- Buscar itemId en metadatos
+                         a.metadatos->>'itemId' = $1
+                         -- Buscar documentUrn en metadatos que contenga el itemId
+                         OR (a.metadatos->>'documentUrn' IS NOT NULL AND a.metadatos->>'documentUrn' LIKE '%' || $1 || '%')
+                         -- Buscar en datosNuevos (puede contener linkedDocuments con URN)
+                         OR (a.datosnuevos IS NOT NULL AND a.datosnuevos::text LIKE '%' || $1 || '%')
+                     ))
+                )
+            ORDER BY a.fechacreacion DESC
+        `;
+
+        const result = await this.databaseFunctionService.executeQuery<any>(
+            query,
+            [itemId],
+        );
+
+        return result || [];
+    }
+
     async registrarAccion(
         idUsuario: number,
         accion: string,

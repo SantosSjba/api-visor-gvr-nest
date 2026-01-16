@@ -32,6 +32,7 @@ import { ObtenerRelacionesLinksItemUseCase } from '../../application/use-cases/d
 import { ObtenerRelacionesRefsItemUseCase } from '../../application/use-cases/data-management/items/obtener-relaciones-refs-item.use-case';
 import { ObtenerTipVersionUseCase } from '../../application/use-cases/data-management/items/obtener-tip-version.use-case';
 import { ObtenerVersionesUseCase } from '../../application/use-cases/data-management/items/obtener-versiones.use-case';
+import { ObtenerActividadesArchivoUseCase } from '../../application/use-cases/data-management/items/obtener-actividades-archivo.use-case';
 import { SubirArchivoUseCase } from '../../application/use-cases/data-management/items/subir-archivo.use-case';
 import { CrearItemUseCase } from '../../application/use-cases/data-management/items/crear-item.use-case';
 import { CrearReferenciaItemUseCase } from '../../application/use-cases/data-management/items/crear-referencia-item.use-case';
@@ -58,6 +59,7 @@ export class DataManagementItemsController {
         private readonly obtenerRelacionesRefsItemUseCase: ObtenerRelacionesRefsItemUseCase,
         private readonly obtenerTipVersionUseCase: ObtenerTipVersionUseCase,
         private readonly obtenerVersionesUseCase: ObtenerVersionesUseCase,
+        private readonly obtenerActividadesArchivoUseCase: ObtenerActividadesArchivoUseCase,
         // Upload
         private readonly subirArchivoUseCase: SubirArchivoUseCase,
         // Create/Update/Delete
@@ -311,6 +313,26 @@ export class DataManagementItemsController {
         return ApiResponseDto.success(
             { ...resultado, data: resultado.data, links: resultado.links },
             'Versiones obtenidas exitosamente',
+        );
+    }
+
+    /**
+     * GET - Obtener las actividades de un archivo
+     * GET /data-management/items/:projectId/:itemId/activities
+     */
+    @Get(':projectId/:itemId/activities')
+    @HttpCode(HttpStatus.OK)
+    async obtenerActividadesArchivo(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Param('itemId') itemId: string,
+    ) {
+        const user = (request as any).user;
+        const resultado = await this.obtenerActividadesArchivoUseCase.execute(user.sub, projectId, itemId);
+
+        return ApiResponseDto.success(
+            resultado,
+            'Actividades del archivo obtenidas exitosamente',
         );
     }
 
