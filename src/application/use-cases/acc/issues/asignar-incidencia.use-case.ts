@@ -53,6 +53,10 @@ export class AsignarIncidenciaUseCase {
             }
         }
 
+        // Obtener usuarios asignados ANTES de hacer cambios (para comparar después)
+        const usuariosAnterioresData = await this.accRecursosRepository.obtenerUsuariosAsignadosIncidencia(dto.issueId);
+        const usuariosAnterioresIds = usuariosAnterioresData?.data?.map((u: any) => u.userId) || [];
+
         let resultado: any;
         let usuariosAsignados: number[] = [];
 
@@ -67,12 +71,8 @@ export class AsignarIncidenciaUseCase {
                 );
                 usuariosAsignados = []; // Asegurar que esté vacío
             } else {
-                // Obtener usuarios actualmente asignados
-                const usuariosActualesData = await this.accRecursosRepository.obtenerUsuariosAsignadosIncidencia(dto.issueId);
-                const usuariosActualesIds = usuariosActualesData?.data?.map((u: any) => u.userId) || [];
-                
                 // Identificar usuarios que deben desasignarse (están asignados pero no en la nueva lista)
-                const usuariosADesasignar = usuariosActualesIds.filter((id: number) => !userIds.includes(id));
+                const usuariosADesasignar = usuariosAnterioresIds.filter((id: number) => !userIds.includes(id));
                 
                 // Desasignar usuarios que no están en la nueva lista
                 if (usuariosADesasignar.length > 0) {
@@ -83,14 +83,22 @@ export class AsignarIncidenciaUseCase {
                     );
                 }
                 
-                // Asignar usuarios (solo los que no estaban ya asignados)
-                resultado = await this.accRecursosRepository.asignarUsuariosIncidencia(
-                    dto.issueId,
-                    projectId,
-                    userIds,
-                    userId,
-                    userId,
-                );
+                // Identificar usuarios nuevos que deben asignarse (están en la nueva lista pero no estaban asignados)
+                const usuariosNuevos = userIds.filter((id: number) => !usuariosAnterioresIds.includes(id));
+                
+                // Asignar solo los usuarios nuevos
+                if (usuariosNuevos.length > 0) {
+                    resultado = await this.accRecursosRepository.asignarUsuariosIncidencia(
+                        dto.issueId,
+                        projectId,
+                        usuariosNuevos,
+                        userId,
+                        userId,
+                    );
+                } else {
+                    // Si no hay usuarios nuevos, el resultado es exitoso (solo se desasignaron)
+                    resultado = { success: true, message: 'Usuarios desasignados correctamente' };
+                }
                 usuariosAsignados = userIds;
             }
         } else {
@@ -159,19 +167,31 @@ export class AsignarIncidenciaUseCase {
             }
         }
 
-        // Emitir notificaciones a los usuarios asignados
-        if (usuariosAsignados.length > 0 && usuariosAsignadosData?.data) {
-            try {
-                const recursoActualizado = await this.accRecursosRepository.obtenerRecurso('issue', dto.issueId);
-                
-                usuariosAsignados.forEach((userIdAsignado) => {
+        // Emitir notificaciones a los usuarios afectados
+        try {
+            const recursoActualizado = await this.accRecursosRepository.obtenerRecurso('issue', dto.issueId);
+            const usuariosAsignadosActualesIds = usuariosAsignadosData?.data?.map((u: any) => u.userId) || [];
+            
+            // Identificar usuarios nuevos (asignados ahora pero no antes)
+            const usuariosNuevosIds = usuariosAsignadosActualesIds.filter(
+                (id: number) => !usuariosAnterioresIds.includes(id)
+            );
+            
+            // Identificar usuarios desasignados (estaban antes pero no ahora)
+            const usuariosDesasignadosIds = usuariosAnterioresIds.filter(
+                (id: number) => !usuariosAsignadosActualesIds.includes(id)
+            );
+            
+            // Enviar notificaciones a usuarios recién asignados
+            if (usuariosNuevosIds.length > 0 && usuariosAsignadosData?.data) {
+                usuariosNuevosIds.forEach((userIdAsignado: number) => {
                     const usuarioAsignado = usuariosAsignadosData.data.find((u: any) => u.userId === userIdAsignado);
                     
                     if (usuarioAsignado) {
                         const notification = {
                             type: 'issue_assigned',
                             title: 'Incidencia Asignada',
-                            message: `Te han asignado una incidencia`,
+                            message: `te ha asignado la incidencia`,
                             issueId: dto.issueId,
                             projectId: projectId,
                             assignedBy: {
@@ -189,10 +209,39 @@ export class AsignarIncidenciaUseCase {
                         this.broadcastService.emitNotificationToUser(userIdAsignado, notification);
                     }
                 });
-            } catch (error) {
-                // No fallar la operación si la notificación falla
-                console.error('Error al emitir notificaciones:', error);
             }
+            
+            // Enviar notificaciones a usuarios desasignados
+            // Esto cubre tanto desasignaciones parciales como totales
+            if (usuariosDesasignadosIds.length > 0) {
+                usuariosDesasignadosIds.forEach((userIdDesasignado: number) => {
+                    // Buscar el nombre del usuario desasignado en los datos anteriores
+                    const usuarioDesasignado = usuariosAnterioresData?.data?.find((u: any) => u.userId === userIdDesasignado);
+                    
+                    const notification = {
+                        type: 'issue_unassigned',
+                        title: 'Incidencia Desasignada',
+                        message: `te ha desasignado de la incidencia`,
+                        issueId: dto.issueId,
+                        projectId: projectId,
+                        unassignedBy: {
+                            id: userId,
+                            name: recursoActualizado?.usuario_modifico || 'Usuario desconocido',
+                        },
+                        unassignedTo: {
+                            id: userIdDesasignado,
+                            name: usuarioDesasignado?.usuario || 'Usuario desconocido',
+                        },
+                        issueTitle: recursoActualizado?.nombre || 'Incidencia',
+                        timestamp: new Date().toISOString(),
+                    };
+
+                    this.broadcastService.emitNotificationToUser(userIdDesasignado, notification);
+                });
+            }
+        } catch (error) {
+            // No fallar la operación si la notificación falla
+            console.error('Error al emitir notificaciones:', error);
         }
 
         const usuariosAsignadosIds = usuariosAsignadosData?.data?.map((u: any) => u.userId) || usuariosAsignados;
