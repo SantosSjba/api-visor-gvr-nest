@@ -19,6 +19,8 @@ export interface IAuditoriaRepository {
 
     obtenerEstadisticas(fechaDesde: string | null, fechaHasta: string | null): Promise<any | null>;
 
+    obtenerAuditoriasPorItemId(itemId: string): Promise<any[]>;
+
     registrarAccion(
         idUsuario: number,
         accion: string,
