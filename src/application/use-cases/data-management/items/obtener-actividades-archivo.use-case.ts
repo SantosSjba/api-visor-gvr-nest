@@ -204,6 +204,11 @@ export class ObtenerActividadesArchivoUseCase {
                     tipoActividad = 'file_view';
                     descripcionActividad = `${usuario} ha visto este archivo.`;
                     break;
+                case 'FILE_MOVE':
+                    tipoActividad = 'file_move';
+                    // Usar la descripción de la auditoría que ya contiene los detalles del movimiento
+                    descripcionActividad = descripcion || `${usuario} ha movido este archivo.`;
+                    break;
                 case 'ISSUE_CREATE':
                     // Verificar si la incidencia está vinculada a este archivo
                     const issueMetadatos = metadatos || {};

@@ -65,4 +65,29 @@ export interface IAccRecursosRepository {
         limit: number,
         offset: number,
     ): Promise<any>;
+
+    /**
+     * Asigna múltiples usuarios a una incidencia
+     */
+    asignarUsuariosIncidencia(
+        issueId: string,
+        projectId: string,
+        userIds: number[],
+        idUsuarioAsignador: number,
+        idUsuarioCreacion: number,
+    ): Promise<any>;
+
+    /**
+     * Desasigna usuarios de una incidencia
+     */
+    desasignarUsuariosIncidencia(
+        issueId: string,
+        userIds: number[] | null, // null para desasignar todos
+        idUsuarioModificacion: number,
+    ): Promise<any>;
+
+    /**
+     * Obtiene todos los usuarios asignados a una incidencia
+     */
+    obtenerUsuariosAsignadosIncidencia(issueId: string): Promise<any>;
 }

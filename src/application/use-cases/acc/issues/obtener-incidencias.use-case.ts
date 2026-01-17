@@ -94,8 +94,8 @@ export class ObtenerIncidenciasUseCase {
                             issue.id,
                         );
 
-                        // Buscar asignación de la incidencia
-                        const recursoAsignacion = await this.accRecursosRepository.obtenerRecurso('issue', issue.id);
+                        // Buscar asignaciones múltiples de la incidencia
+                        const usuariosAsignados = await this.accRecursosRepository.obtenerUsuariosAsignadosIncidencia(issue.id);
 
                         let issueEnriquecida: any = { ...issue };
 
@@ -110,13 +110,25 @@ export class ObtenerIncidenciasUseCase {
                             };
                         }
 
-                        // Agregar información del usuario asignado
-                        if (recursoAsignacion && recursoAsignacion.idusuario_asignado) {
+                        // Agregar información de usuarios asignados (múltiples)
+                        if (usuariosAsignados && usuariosAsignados.success && usuariosAsignados.data && usuariosAsignados.data.length > 0) {
+                            const usuarios = usuariosAsignados.data;
+                            // Mantener compatibilidad: usar el primer usuario asignado para campos legacy
+                            const primerUsuario = usuarios[0];
                             issueEnriquecida = {
                                 ...issueEnriquecida,
-                                assignedToReal: recursoAsignacion.usuario_asignado,
-                                assignedToRealId: recursoAsignacion.idusuario_asignado,
-                                assignedToRealRole: recursoAsignacion.rol_asignado || null,
+                                assignedToReal: primerUsuario.usuario,
+                                assignedToRealId: primerUsuario.userId,
+                                assignedToRealRole: primerUsuario.rol || null,
+                                // Nuevos campos para múltiples asignaciones
+                                assignedToRealMultiple: usuarios.map((u: any) => ({
+                                    userId: u.userId,
+                                    usuario: u.usuario,
+                                    correo: u.correo,
+                                    rol: u.rol,
+                                    fechaAsignacion: u.fechaAsignacion,
+                                })),
+                                assignedToRealIds: usuarios.map((u: any) => u.userId),
                             };
                         }
 

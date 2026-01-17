@@ -189,4 +189,66 @@ export class AccRecursosRepository implements IAccRecursosRepository {
 
         return { data: [], total_registros: 0 };
     }
+
+    async asignarUsuariosIncidencia(
+        issueId: string,
+        projectId: string,
+        userIds: number[],
+        idUsuarioAsignador: number,
+        idUsuarioCreacion: number,
+    ): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accAsignarUsuariosIncidencia',
+            [issueId, projectId, userIds, idUsuarioAsignador, idUsuarioCreacion],
+        );
+
+        if (!result) {
+            return null;
+        }
+
+        const jsonbResult = result.accasignarusuariosincidencia || result.accAsignarUsuariosIncidencia || result;
+
+        return jsonbResult;
+    }
+
+    async desasignarUsuariosIncidencia(
+        issueId: string,
+        userIds: number[] | null,
+        idUsuarioModificacion: number,
+    ): Promise<any> {
+        // Asegurar que si es un array vacío, se pase como null explícitamente
+        // PostgreSQL necesita null para desasignar todos, no un array vacío
+        const userIdsParam = (userIds && Array.isArray(userIds) && userIds.length > 0) ? userIds : null;
+        
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accDesasignarUsuariosIncidencia',
+            [issueId, idUsuarioModificacion, userIdsParam],
+        );
+
+        if (!result) {
+            return {
+                success: false,
+                message: 'No se obtuvo respuesta de la función de desasignación',
+            };
+        }
+
+        const jsonbResult = result.accdesasignarusuariosincidencia || result.accDesasignarUsuariosIncidencia || result;
+
+        return jsonbResult;
+    }
+
+    async obtenerUsuariosAsignadosIncidencia(issueId: string): Promise<any> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'accObtenerUsuariosAsignadosIncidencia',
+            [issueId],
+        );
+
+        if (!result) {
+            return { success: false, data: [], total: 0 };
+        }
+
+        const jsonbResult = result.accobtenerusuariosasignadosincidencia || result.accObtenerUsuariosAsignadosIncidencia || result;
+
+        return jsonbResult;
+    }
 }
