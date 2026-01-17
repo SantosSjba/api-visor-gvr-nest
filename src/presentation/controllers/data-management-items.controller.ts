@@ -38,12 +38,14 @@ import { CrearItemUseCase } from '../../application/use-cases/data-management/it
 import { CrearReferenciaItemUseCase } from '../../application/use-cases/data-management/items/crear-referencia-item.use-case';
 import { ActualizarItemUseCase } from '../../application/use-cases/data-management/items/actualizar-item.use-case';
 import { EliminarItemUseCase } from '../../application/use-cases/data-management/items/eliminar-item.use-case';
+import { DesplazarItemUseCase } from '../../application/use-cases/data-management/items/desplazar-item.use-case';
 
 // DTOs
 import { SubirArchivoDto } from '../../application/dtos/data-management/items/subir-archivo.dto';
 import { CrearItemDto } from '../../application/dtos/data-management/items/crear-item.dto';
 import { CrearReferenciaItemDto } from '../../application/dtos/data-management/items/crear-referencia-item.dto';
 import { ActualizarItemDto } from '../../application/dtos/data-management/items/actualizar-item.dto';
+import { DesplazarItemDto } from '../../application/dtos/data-management/items/desplazar-item.dto';
 
 @Controller('data-management/items')
 @UseGuards(JwtAuthGuard)
@@ -67,6 +69,7 @@ export class DataManagementItemsController {
         private readonly crearReferenciaItemUseCase: CrearReferenciaItemUseCase,
         private readonly actualizarItemUseCase: ActualizarItemUseCase,
         private readonly eliminarItemUseCase: EliminarItemUseCase,
+        private readonly desplazarItemUseCase: DesplazarItemUseCase,
     ) { }
 
     /**
@@ -427,6 +430,39 @@ export class DataManagementItemsController {
                 wasAlreadyDeleted: resultado.wasAlreadyDeleted || false,
             },
             message,
+        );
+    }
+
+    /**
+     * PATCH - Desplazar (mover) un item a otra carpeta
+     * PATCH /data-management/items/:projectId/:itemId/move
+     */
+    @Patch(':projectId/:itemId/move')
+    @HttpCode(HttpStatus.OK)
+    async desplazarItem(
+        @Req() request: Request,
+        @Param('projectId') projectId: string,
+        @Param('itemId') itemId: string,
+        @Body() dto: DesplazarItemDto,
+    ) {
+        const user = (request as any).user;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+        const resultado = await this.desplazarItemUseCase.execute(
+            user.sub,
+            projectId,
+            itemId,
+            dto,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
+
+        return ApiResponseDto.success(
+            resultado.data,
+            'Archivo desplazado exitosamente',
         );
     }
 }

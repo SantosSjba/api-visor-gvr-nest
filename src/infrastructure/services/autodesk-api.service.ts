@@ -5338,6 +5338,57 @@ export class AutodeskApiService {
     }
 
     /**
+     * Mueve un item (archivo) a otra carpeta actualizando su relación parent
+     */
+    async moverItem(accessToken: string, projectId: string, itemId: string, targetFolderId: string): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !itemId || !targetFolderId) {
+                throw new Error('Token, projectId, itemId y targetFolderId son requeridos');
+            }
+
+            // Asegurar que projectId tenga el prefijo 'b.' para Data Management API
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items/${encodeURIComponent(itemId)}`;
+
+            // Estructura del body para actualizar la relación parent
+            const itemData = {
+                jsonapi: { version: '1.0' },
+                data: {
+                    type: 'items',
+                    id: itemId,
+                    relationships: {
+                        parent: {
+                            data: {
+                                type: 'folders',
+                                id: targetFolderId,
+                            },
+                        },
+                    },
+                },
+            };
+
+            const response = await this.httpClient.patch<any>(url, itemData, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al mover item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
      * Elimina un item (marca como eliminado creando versión Deleted)
      */
     async eliminarItem(accessToken: string, projectId: string, itemId: string): Promise<any> {

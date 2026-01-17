@@ -19,6 +19,7 @@ import { CrearItemUseCase } from '../../application/use-cases/data-management/it
 import { CrearReferenciaItemUseCase } from '../../application/use-cases/data-management/items/crear-referencia-item.use-case';
 import { ActualizarItemUseCase } from '../../application/use-cases/data-management/items/actualizar-item.use-case';
 import { EliminarItemUseCase } from '../../application/use-cases/data-management/items/eliminar-item.use-case';
+import { DesplazarItemUseCase } from '../../application/use-cases/data-management/items/desplazar-item.use-case';
 
 // Infrastructure
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
@@ -50,6 +51,7 @@ import { AUDITORIA_REPOSITORY } from '../../domain/repositories/auditoria.reposi
         CrearReferenciaItemUseCase,
         ActualizarItemUseCase,
         EliminarItemUseCase,
+        DesplazarItemUseCase,
         // Infrastructure
         AutodeskApiService,
         HttpClientService,
