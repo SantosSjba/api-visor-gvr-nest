@@ -20,10 +20,12 @@ import { ObtenerAdjuntosUseCase } from '../../application/use-cases/acc/issues/o
 import { EliminarAdjuntoUseCase } from '../../application/use-cases/acc/issues/eliminar-adjunto.use-case';
 import { AsignarIncidenciaUseCase } from '../../application/use-cases/acc/issues/asignar-incidencia.use-case';
 import { ObtenerUsuariosDisponiblesUseCase } from '../../application/use-cases/acc/issues/obtener-usuarios-disponibles.use-case';
+import { ExportarIncidenciasUseCase } from '../../application/use-cases/acc/issues/exportar-incidencias.use-case';
 import ObtenerTokenValidoHelper from '../../application/use-cases/acc/issues/obtener-token-valido.helper';
 
 // Services
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
+import { ExportacionIncidenciasService } from '../../infrastructure/services/exportacion-incidencias.service';
 import { HttpClientService } from '../../shared/services/http-client.service';
 
 // Repositories
@@ -64,9 +66,11 @@ import { BroadcastModule } from './broadcast.module';
         EliminarAdjuntoUseCase,
         AsignarIncidenciaUseCase,
         ObtenerUsuariosDisponiblesUseCase,
+        ExportarIncidenciasUseCase,
 
         // Services
         AutodeskApiService,
+        ExportacionIncidenciasService,
         HttpClientService,
 
         // Repositories

@@ -2345,6 +2345,105 @@ export class AutodeskApiService {
         }
     }
 
+    /**
+     * Exporta incidencias según el tipo y formato especificado
+     */
+    async exportarIncidencias(accessToken: string, projectId: string, dto: any): Promise<any> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+            if (!projectId) {
+                throw new Error('El ID del proyecto es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const normalizedProjectId = this.normalizarProjectId(projectId);
+
+            // Construir el payload según el tipo de reporte
+            const payload: any = {
+                reportType: dto.tipoReporte,
+                format: dto.formato,
+            };
+
+            // Agregar opciones según el tipo de reporte
+            if (dto.titulo) payload.title = dto.titulo;
+            if (dto.guardarEnArchivos !== undefined) payload.saveToFiles = dto.guardarEnArchivos;
+            if (dto.diseño) payload.design = dto.diseño;
+
+            // Opciones para incluir en el reporte
+            const options: any = {};
+            if (dto.incluirCubierta !== undefined) options.cover = dto.incluirCubierta;
+            if (dto.incluirIndice !== undefined) options.index = dto.incluirIndice;
+            if (dto.incluirInformacionGeneralPlano !== undefined) options.generalPlanInfo = dto.incluirInformacionGeneralPlano;
+            if (dto.incluirCamposPersonalizados !== undefined) options.customFields = dto.incluirCamposPersonalizados;
+            if (dto.incluirVinculosArchivo !== undefined) options.fileLinks = dto.incluirVinculosArchivo;
+            if (dto.incluirFotos !== undefined) options.photos = dto.incluirFotos;
+            if (dto.tamañoFotos) options.photoSize = dto.tamañoFotos;
+            if (dto.incluirOtrasReferencias !== undefined) options.otherReferences = dto.incluirOtrasReferencias;
+            if (dto.incluirComentarios !== undefined) options.comments = dto.incluirComentarios;
+
+            if (Object.keys(options).length > 0) {
+                payload.options = options;
+            }
+
+            // Para detalle de incidencia
+            if (dto.tipoReporte === 'issue_detail' && dto.issueId) {
+                const url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/issues/${encodeURIComponent(dto.issueId)}/reports`;
+                
+                const response = await this.httpClient.post<any>(url, payload, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    responseType: dto.formato === 'bcf' ? 'arraybuffer' : 'arraybuffer', // Para descargar archivos
+                });
+
+                return {
+                    success: true,
+                    data: response.data,
+                    contentType: dto.formato === 'pdf' ? 'application/pdf' : 'application/zip',
+                    filename: dto.titulo || `reporte_${dto.tipoReporte}_${Date.now()}.${dto.formato}`,
+                };
+            }
+
+            // Para resumen de incidencias o incidencias en planos
+            let url = `${baseUrl}/construction/issues/v1/projects/${encodeURIComponent(normalizedProjectId)}/reports`;
+            
+            // Agregar filtros si existen
+            if (dto.issueIds && dto.issueIds.length > 0) {
+                payload.issueIds = dto.issueIds;
+            }
+            if (dto.filter_status) {
+                payload.filters = payload.filters || {};
+                payload.filters.status = dto.filter_status;
+            }
+            if (dto.filter_linkedDocumentUrn) {
+                payload.filters = payload.filters || {};
+                payload.filters.linkedDocumentUrn = dto.filter_linkedDocumentUrn;
+            }
+
+            const response = await this.httpClient.post<any>(url, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                responseType: 'arraybuffer', // Para descargar archivos
+            });
+
+            return {
+                success: true,
+                data: response.data,
+                contentType: dto.formato === 'pdf' ? 'application/pdf' : 'application/zip',
+                filename: dto.titulo || `reporte_${dto.tipoReporte}_${Date.now()}.${dto.formato}`,
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al exportar incidencias: ${error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
     // ==================== BIM 360 ISSUES API V2 ====================
 
     /**
