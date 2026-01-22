@@ -11,12 +11,13 @@ import {
     HttpStatus,
     UseGuards,
     Req,
+    Res,
     UseInterceptors,
     UploadedFile,
     BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
 import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
@@ -40,6 +41,7 @@ import { ObtenerAdjuntosUseCase } from '../../application/use-cases/acc/issues/o
 import { EliminarAdjuntoUseCase } from '../../application/use-cases/acc/issues/eliminar-adjunto.use-case';
 import { AsignarIncidenciaUseCase } from '../../application/use-cases/acc/issues/asignar-incidencia.use-case';
 import { ObtenerUsuariosDisponiblesUseCase } from '../../application/use-cases/acc/issues/obtener-usuarios-disponibles.use-case';
+import { ExportarIncidenciasUseCase } from '../../application/use-cases/acc/issues/exportar-incidencias.use-case';
 
 // DTOs
 import { ObtenerTiposIncidenciasDto } from '../../application/dtos/acc/issues/obtener-tipos-incidencias.dto';
@@ -56,6 +58,7 @@ import { CrearComentarioDto } from '../../application/dtos/acc/issues/crear-come
 import { CrearAdjuntoDto } from '../../application/dtos/acc/issues/crear-adjunto.dto';
 import { ObtenerAdjuntosDto } from '../../application/dtos/acc/issues/obtener-adjuntos.dto';
 import { AsignarIncidenciaDto } from '../../application/dtos/acc/issues/asignar-incidencia.dto';
+import { ExportarIncidenciasDto } from '../../application/dtos/acc/issues/exportar-incidencias.dto';
 
 @Controller('acc/projects/:projectId')
 export class AccIssuesController {
@@ -78,6 +81,7 @@ export class AccIssuesController {
         private readonly eliminarAdjuntoUseCase: EliminarAdjuntoUseCase,
         private readonly asignarIncidenciaUseCase: AsignarIncidenciaUseCase,
         private readonly obtenerUsuariosDisponiblesUseCase: ObtenerUsuariosDisponiblesUseCase,
+        private readonly exportarIncidenciasUseCase: ExportarIncidenciasUseCase,
     ) { }
 
     /**
@@ -814,6 +818,43 @@ export class AccIssuesController {
             resultado,
             'Usuarios obtenidos exitosamente',
         );
+    }
+
+    /**
+     * POST - Exportar incidencias
+     * POST /acc/projects/:projectId/issues/export
+     */
+    @Post('issues/export')
+    @UseGuards(JwtAuthGuard)
+    async exportarIncidencias(
+        @Param('projectId') projectId: string,
+        @Body() dto: ExportarIncidenciasDto,
+        @Req() request: Request,
+        @Res() response: Response,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        const user = (request as any).user;
+        const userId = user?.sub || user?.id;
+        if (!userId) {
+            throw new BadRequestException('User ID es requerido');
+        }
+
+        const userIdNumero = typeof userId === 'number' ? userId : parseInt(userId.toString(), 10);
+        if (isNaN(userIdNumero) || userIdNumero <= 0) {
+            throw new BadRequestException('User ID inválido');
+        }
+
+        const resultado = await this.exportarIncidenciasUseCase.execute(userIdNumero, projectId, dto);
+
+        // Configurar headers para descarga de archivo
+        response.setHeader('Content-Type', resultado.contentType);
+        response.setHeader('Content-Disposition', `attachment; filename="${resultado.filename}"`);
+        
+        // Enviar el archivo
+        response.send(Buffer.from(resultado.data));
     }
 }
 
