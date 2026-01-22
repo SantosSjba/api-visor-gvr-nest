@@ -13,14 +13,22 @@ export class ExportarIncidenciasUseCase {
         let contentType: string;
         let filename: string;
 
+        // Limpiar el título para el nombre de archivo (remover caracteres problemáticos)
+        const tituloLimpio = dto.titulo
+            ? dto.titulo
+                  .replace(/[<>:"/\\|?*]/g, '_') // Reemplazar caracteres no permitidos
+                  .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
+                  .substring(0, 100) // Limitar longitud
+            : 'reporte';
+
         if (dto.formato === FormatoExportacion.PDF) {
             data = await this.exportacionIncidenciasService.exportarPDF(userId, projectId, dto);
             contentType = 'application/pdf';
-            filename = `${dto.titulo || 'reporte'}_${Date.now()}.pdf`;
+            filename = `${tituloLimpio}_${Date.now()}.pdf`;
         } else {
             data = await this.exportacionIncidenciasService.exportarBCF(userId, projectId, dto);
             contentType = 'application/zip';
-            filename = `${dto.titulo || 'reporte'}_${Date.now()}.bcfzip`;
+            filename = `${tituloLimpio}_${Date.now()}.bcfzip`;
         }
 
         return {
