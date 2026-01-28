@@ -5367,6 +5367,60 @@ export class AutodeskApiService {
     }
 
     /**
+     * Copia un item (versión) a una carpeta destino (BIM 360 copyFrom).
+     * POST projects/:projectId/items?copyFrom={sourceVersionUrn}
+     */
+    async copiarItem(
+        accessToken: string,
+        projectId: string,
+        sourceVersionUrn: string,
+        targetFolderId: string,
+    ): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !sourceVersionUrn || !targetFolderId) {
+                throw new Error('Token, projectId, sourceVersionUrn y targetFolderId son requeridos');
+            }
+
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items?copyFrom=${encodeURIComponent(sourceVersionUrn)}`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: {
+                    type: 'items',
+                    relationships: {
+                        parent: {
+                            data: {
+                                type: 'folders',
+                                id: targetFolderId,
+                            },
+                        },
+                    },
+                },
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+                included: response.data.included || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al copiar item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
      * Crea una referencia en un item
      */
     async crearReferenciaItem(accessToken: string, projectId: string, itemId: string, refData: any): Promise<any> {
