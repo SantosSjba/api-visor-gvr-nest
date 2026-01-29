@@ -15,6 +15,7 @@ export interface LoginResponse {
         nombre: string;
         correo: string;
         estado: number;
+        fotoPerfil?: string;
         roles: any[];
         permisos: any[];
         menus: any[];
@@ -96,6 +97,7 @@ export class LoginUseCase {
                 nombre: user.nombre,
                 correo: user.correo,
                 estado: user.estado,
+                fotoPerfil: user.fotoPerfil,
                 roles: user.roles,
                 permisos: user.permisos,
                 menus: user.menus,

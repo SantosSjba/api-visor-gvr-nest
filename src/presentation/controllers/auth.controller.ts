@@ -2,20 +2,25 @@ import {
     Controller,
     Post,
     Get,
-    Delete,
+    Patch,
     Body,
     HttpCode,
     HttpStatus,
     Req,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
     UnauthorizedException,
+    BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
 import { ObtenerPerfilUseCase } from '../../application/use-cases/auth/obtener-perfil.use-case';
+import { SubirFotoPerfilUseCase } from '../../application/use-cases/auth/subir-foto-perfil.use-case';
 import { ValidarSesionUseCase } from '../../application/use-cases/auth/validar-sesion.use-case';
 import { CerrarTodasSesionesUseCase } from '../../application/use-cases/auth/cerrar-todas-sesiones.use-case';
 import { RegisterDto } from '../../application/dtos/register.dto';
@@ -31,6 +36,7 @@ export class AuthController {
         private readonly refreshTokenUseCase: RefreshTokenUseCase,
         private readonly logoutUseCase: LogoutUseCase,
         private readonly obtenerPerfilUseCase: ObtenerPerfilUseCase,
+        private readonly subirFotoPerfilUseCase: SubirFotoPerfilUseCase,
         private readonly validarSesionUseCase: ValidarSesionUseCase,
         private readonly cerrarTodasSesionesUseCase: CerrarTodasSesionesUseCase,
     ) { }
@@ -129,6 +135,36 @@ export class AuthController {
         return ApiResponseDto.success(
             perfil,
             'Perfil obtenido exitosamente',
+        );
+    }
+
+    /**
+     * Subir foto de perfil del usuario autenticado
+     * PATCH /auth/perfil/foto
+     */
+    @Patch('perfil/foto')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @UseInterceptors(FileInterceptor('foto'))
+    async subirFotoPerfil(
+        @Req() request: Request,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        const token = this.extractTokenFromHeader(request);
+
+        if (!token) {
+            throw new UnauthorizedException('Token no proporcionado');
+        }
+
+        if (!file) {
+            throw new BadRequestException('Se requiere el archivo de imagen (campo "foto")');
+        }
+
+        const result = await this.subirFotoPerfilUseCase.execute(token, file);
+
+        return ApiResponseDto.success(
+            result,
+            'Foto de perfil actualizada exitosamente',
         );
     }
 

@@ -63,6 +63,7 @@ export class ObtenerIncidenciaPorIdUseCase {
                         userId: u.userId,
                         usuario: u.usuario,
                         correo: u.correo,
+                        fotoPerfil: u.fotoPerfil || null,
                         rol: u.rol,
                         fechaAsignacion: u.fechaAsignacion,
                     })),

@@ -7,7 +7,9 @@ if (!globalThis.crypto) {
 
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { json, urlencoded } from 'express';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { envs } from './config';
@@ -16,7 +18,7 @@ import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Main.ts');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Configurar validación global
   app.use(json({ limit: '50mb' }));
@@ -48,6 +50,11 @@ async function bootstrap() {
 
   // Prefijo global para todas las rutas
   app.setGlobalPrefix('api');
+
+  // Servir fotos de perfil (uploads/profiles)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   await app.listen(envs.port || 4001, '0.0.0.0');
   

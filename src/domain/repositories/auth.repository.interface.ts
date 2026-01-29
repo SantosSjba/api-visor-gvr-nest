@@ -18,6 +18,7 @@ export interface IAuthRepository {
         nuevaContrasena: string | null,
         idUsuarioModificacion: number
     ): Promise<any>;
+    actualizarFotoPerfil(idUsuario: number, fotoPerfil: string): Promise<{ fotoPerfil: string }>;
 }
 
 export const AUTH_REPOSITORY = 'AUTH_REPOSITORY';
