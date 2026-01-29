@@ -197,6 +197,42 @@ export class AutodeskApiService {
         return expirationDate.getTime() - now.getTime() < bufferTime;
     }
 
+    /**
+     * Obtiene el perfil del usuario de ACC autenticado (email, nombre, etc.)
+     * Usa el endpoint /userprofile/v1/users/@me
+     */
+    async obtenerPerfilUsuarioAcc(accessToken: string): Promise<{
+        userId: string;
+        userName: string;
+        emailId: string;
+        firstName: string;
+        lastName: string;
+        emailVerified: boolean;
+        profileImages?: any;
+    }> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/userprofile/v1/users/@me`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener perfil del usuario ACC: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
     // ==================== DATA MANAGEMENT API ====================
 
     /**
@@ -5362,6 +5398,60 @@ export class AutodeskApiService {
         } catch (error: any) {
             throw new Error(
                 `Error al crear item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
+            );
+        }
+    }
+
+    /**
+     * Copia un item (versión) a una carpeta destino (BIM 360 copyFrom).
+     * POST projects/:projectId/items?copyFrom={sourceVersionUrn}
+     */
+    async copiarItem(
+        accessToken: string,
+        projectId: string,
+        sourceVersionUrn: string,
+        targetFolderId: string,
+    ): Promise<any> {
+        try {
+            if (!accessToken || !projectId || !sourceVersionUrn || !targetFolderId) {
+                throw new Error('Token, projectId, sourceVersionUrn y targetFolderId son requeridos');
+            }
+
+            const dataManagementProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/data/v1/projects/${encodeURIComponent(dataManagementProjectId)}/items?copyFrom=${encodeURIComponent(sourceVersionUrn)}`;
+
+            const body = {
+                jsonapi: { version: '1.0' },
+                data: {
+                    type: 'items',
+                    relationships: {
+                        parent: {
+                            data: {
+                                type: 'folders',
+                                id: targetFolderId,
+                            },
+                        },
+                    },
+                },
+            };
+
+            const response = await this.httpClient.post<any>(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json',
+                },
+            });
+
+            return {
+                success: true,
+                data: response.data.data || null,
+                included: response.data.included || [],
+            };
+        } catch (error: any) {
+            throw new Error(
+                `Error al copiar item: ${error.response?.data?.errors?.[0]?.detail || error.response?.data?.message || error.message}`,
             );
         }
     }

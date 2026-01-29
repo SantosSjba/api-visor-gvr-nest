@@ -49,11 +49,30 @@ export class SubirArchivoUseCase {
 
         const fileName = file.originalname;
         const fileBuffer = file.buffer;
+        const projectIdNorm = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+
+        // Buscar si ya existe un item con el mismo nombre en la carpeta (para crear nueva versión como en ACC)
+        let existingItem: { id: string; attributes?: any } | null = null;
+        try {
+            const contenido = await this.autodeskApiService.obtenerContenidoCarpeta(
+                token.tokenAcceso,
+                projectIdNorm,
+                folderId,
+                { 'filter[type]': 'items' },
+            );
+            const items = (contenido?.data || []) as any[];
+            existingItem = items.find(
+                (i: any) =>
+                    (i.attributes?.displayName || i.attributes?.name || '').trim() === fileName.trim(),
+            ) || null;
+        } catch {
+            // Si falla obtener contenido, continuar con flujo de nuevo item
+        }
 
         // PASO 1: Crear storage
         const storageResult = await this.autodeskApiService.crearStorageParaItem(
             token.tokenAcceso,
-            projectId,
+            projectIdNorm,
             folderId,
             fileName,
         );
@@ -101,66 +120,86 @@ export class SubirArchivoUseCase {
             uploadKey,
         );
 
-        // PASO 5: Crear item (primera versión)
-        const itemData = {
-            jsonapi: {
-                version: '1.0',
-            },
-            data: {
-                type: 'items',
+        // PASO 5: Crear nueva versión (si existe item con mismo nombre) o crear item (primera versión)
+        let itemId: string | undefined;
+        let itemName: string;
+        let itemResult: any;
+
+        if (existingItem) {
+            // Crear nueva versión del item existente (comportamiento tipo ACC)
+            const versionData = {
+                type: 'versions',
                 attributes: {
+                    name: fileName,
                     displayName: fileName,
                     extension: {
-                        type: 'items:autodesk.bim360:File',
+                        type: 'versions:autodesk.bim360:File',
                         version: '1.0',
                     },
                 },
                 relationships: {
-                    tip: {
-                        data: {
-                            type: 'versions',
-                            id: '1',
-                        },
+                    item: {
+                        data: { type: 'items', id: existingItem.id },
                     },
-                    parent: {
-                        data: {
-                            type: 'folders',
-                            id: folderId,
-                        },
+                    storage: {
+                        data: { type: 'objects', id: storageId },
                     },
                 },
-            },
-            included: [
-                {
-                    type: 'versions',
-                    id: '1',
+            };
+            await this.autodeskApiService.crearVersion(
+                token.tokenAcceso,
+                projectIdNorm,
+                versionData,
+            );
+            itemId = existingItem.id;
+            itemName = fileName;
+            itemResult = {
+                data: { ...existingItem, attributes: { ...existingItem.attributes, displayName: fileName } },
+                included: [],
+            };
+        } else {
+            // Crear nuevo item (primera versión)
+            const itemData = {
+                jsonapi: { version: '1.0' },
+                data: {
+                    type: 'items',
                     attributes: {
-                        name: fileName,
+                        displayName: fileName,
                         extension: {
-                            type: 'versions:autodesk.bim360:File',
+                            type: 'items:autodesk.bim360:File',
                             version: '1.0',
                         },
                     },
                     relationships: {
-                        storage: {
-                            data: {
-                                type: 'objects',
-                                id: storageId,
-                            },
-                        },
+                        tip: { data: { type: 'versions', id: '1' } },
+                        parent: { data: { type: 'folders', id: folderId } },
                     },
                 },
-            ],
-        };
-
-        const itemResult = await this.autodeskApiService.crearItem(
-            token.tokenAcceso,
-            projectId,
-            itemData,
-        );
-
-        const itemId = itemResult.data?.id;
-        const itemName = itemResult.data?.attributes?.displayName || fileName;
+                included: [
+                    {
+                        type: 'versions',
+                        id: '1',
+                        attributes: {
+                            name: fileName,
+                            extension: {
+                                type: 'versions:autodesk.bim360:File',
+                                version: '1.0',
+                            },
+                        },
+                        relationships: {
+                            storage: { data: { type: 'objects', id: storageId } },
+                        },
+                    },
+                ],
+            };
+            itemResult = await this.autodeskApiService.crearItem(
+                token.tokenAcceso,
+                projectIdNorm,
+                itemData,
+            );
+            itemId = itemResult.data?.id;
+            itemName = itemResult.data?.attributes?.displayName || fileName;
+        }
 
         // Registrar auditoría si el archivo se subió exitosamente
         if (itemId && ipAddress && userAgent) {

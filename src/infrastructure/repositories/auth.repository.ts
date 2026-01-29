@@ -61,6 +61,7 @@ export class AuthRepository implements IAuthRepository {
             estado: result.estado,
             fechacreacion: result.fechacreacion || result.fechaCreacion,
             fechamodificacion: result.fechamodificacion || result.fechaModificacion,
+            fotoPerfil: result.fotoperfil ?? result.fotoPerfil ?? undefined,
             roles: result.roles || [],
             permisos: result.permisos || [],
             menus: result.menus || [],
@@ -135,5 +136,19 @@ export class AuthRepository implements IAuthRepository {
         }
 
         return result;
+    }
+
+    async actualizarFotoPerfil(idUsuario: number, fotoPerfil: string): Promise<{ fotoPerfil: string }> {
+        const result = await this.databaseFunctionService.callFunctionSingle<any>(
+            'authActualizarFotoPerfilUsuario',
+            [idUsuario, fotoPerfil],
+        );
+
+        if (!result) {
+            throw new Error('No se pudo actualizar la foto de perfil');
+        }
+
+        const path = result.fotoperfil ?? result.fotoPerfil ?? fotoPerfil;
+        return { fotoPerfil: path };
     }
 }

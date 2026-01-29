@@ -28,6 +28,7 @@ export class AuthUser {
     estado: number;
     fechacreacion: Date;
     fechamodificacion: Date;
+    fotoPerfil?: string;
     roles: Role[];
     permisos: Permission[];
     menus: Menu[];

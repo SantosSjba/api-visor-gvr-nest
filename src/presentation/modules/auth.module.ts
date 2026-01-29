@@ -8,10 +8,12 @@ import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case';
 import { ObtenerPerfilUseCase } from '../../application/use-cases/auth/obtener-perfil.use-case';
+import { SubirFotoPerfilUseCase } from '../../application/use-cases/auth/subir-foto-perfil.use-case';
 import { ValidarSesionUseCase } from '../../application/use-cases/auth/validar-sesion.use-case';
 import { CerrarTodasSesionesUseCase } from '../../application/use-cases/auth/cerrar-todas-sesiones.use-case';
 import { AuthRepository } from '../../infrastructure/repositories/auth.repository';
 import { SesionRepository } from '../../infrastructure/repositories/sesion.repository';
+import { ProfilePhotoStorageService } from '../../infrastructure/services/profile-photo-storage.service';
 import { AUTH_REPOSITORY } from '../../domain/repositories/auth.repository.interface';
 import { SESION_REPOSITORY } from '../../domain/repositories/sesion.repository.interface';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
@@ -43,12 +45,15 @@ import { JwtStrategy } from '../../infrastructure/auth/jwt.strategy';
             provide: SESION_REPOSITORY,
             useClass: SesionRepository,
         },
+        // Infrastructure services
+        ProfilePhotoStorageService,
         // Use cases
         RegisterUseCase,
         LoginUseCase,
         RefreshTokenUseCase,
         LogoutUseCase,
         ObtenerPerfilUseCase,
+        SubirFotoPerfilUseCase,
         ValidarSesionUseCase,
         CerrarTodasSesionesUseCase,
         // JWT Strategy
