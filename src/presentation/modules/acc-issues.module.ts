@@ -37,6 +37,8 @@ import { AccRecursosRepository } from '../../infrastructure/repositories/acc-rec
 import { ACC_RECURSOS_REPOSITORY } from '../../domain/repositories/acc-recursos.repository.interface';
 import { UsuariosRepository } from '../../infrastructure/repositories/usuarios.repository';
 import { USUARIOS_REPOSITORY } from '../../domain/repositories/usuarios.repository.interface';
+import { AuthRepository } from '../../infrastructure/repositories/auth.repository';
+import { AUTH_REPOSITORY } from '../../domain/repositories/auth.repository.interface';
 import { DatabaseFunctionService } from '../../infrastructure/database/database-function.service';
 import { BroadcastModule } from './broadcast.module';
 
@@ -89,6 +91,10 @@ import { BroadcastModule } from './broadcast.module';
         {
             provide: USUARIOS_REPOSITORY,
             useClass: UsuariosRepository,
+        },
+        {
+            provide: AUTH_REPOSITORY,
+            useClass: AuthRepository,
         },
         DatabaseFunctionService,
     ],

@@ -1,6 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ACC_RECURSOS_REPOSITORY, type IAccRecursosRepository } from '../../../../domain/repositories/acc-recursos.repository.interface';
 import { AUDITORIA_REPOSITORY, type IAuditoriaRepository } from '../../../../domain/repositories/auditoria.repository.interface';
+import { AUTH_REPOSITORY, type IAuthRepository } from '../../../../domain/repositories/auth.repository.interface';
 import { BroadcastService } from '../../../../shared/services/broadcast.service';
 import { AsignarIncidenciaDto } from '../../../dtos/acc/issues/asignar-incidencia.dto';
 
@@ -11,6 +12,8 @@ export class AsignarIncidenciaUseCase {
         private readonly accRecursosRepository: IAccRecursosRepository,
         @Inject(AUDITORIA_REPOSITORY)
         private readonly auditoriaRepository: IAuditoriaRepository,
+        @Inject(AUTH_REPOSITORY)
+        private readonly authRepository: IAuthRepository,
         private readonly broadcastService: BroadcastService,
     ) { }
 
@@ -172,6 +175,20 @@ export class AsignarIncidenciaUseCase {
             const recursoActualizado = await this.accRecursosRepository.obtenerRecurso('issue', dto.issueId);
             const usuariosAsignadosActualesIds = usuariosAsignadosData?.data?.map((u: any) => u.userId) || [];
             
+            // Obtener información del usuario que hace la asignación (usuario actual)
+            let usuarioAsignador: { nombre: string; fotoPerfil: string | null } = { nombre: 'Usuario', fotoPerfil: null };
+            try {
+                const perfilAsignador = await this.authRepository.obtenerPerfilUsuario(userId);
+                if (perfilAsignador) {
+                    usuarioAsignador = {
+                        nombre: perfilAsignador.nombre || 'Usuario',
+                        fotoPerfil: perfilAsignador.fotoperfil || perfilAsignador.fotoPerfil || null,
+                    };
+                }
+            } catch (err) {
+                console.warn('No se pudo obtener el perfil del usuario asignador:', err);
+            }
+            
             // Identificar usuarios nuevos (asignados ahora pero no antes)
             const usuariosNuevosIds = usuariosAsignadosActualesIds.filter(
                 (id: number) => !usuariosAnterioresIds.includes(id)
@@ -196,11 +213,13 @@ export class AsignarIncidenciaUseCase {
                             projectId: projectId,
                             assignedBy: {
                                 id: userId,
-                                name: recursoActualizado?.usuario_modifico || 'Usuario desconocido',
+                                name: usuarioAsignador.nombre,
+                                fotoPerfil: usuarioAsignador.fotoPerfil,
                             },
                             assignedTo: {
                                 id: userIdAsignado,
-                                name: usuarioAsignado.usuario || 'Usuario desconocido',
+                                name: usuarioAsignado.usuario || 'Usuario',
+                                fotoPerfil: usuarioAsignado.fotoPerfil || null,
                             },
                             issueTitle: recursoActualizado?.nombre || 'Incidencia',
                             timestamp: new Date().toISOString(),
@@ -226,11 +245,13 @@ export class AsignarIncidenciaUseCase {
                         projectId: projectId,
                         unassignedBy: {
                             id: userId,
-                            name: recursoActualizado?.usuario_modifico || 'Usuario desconocido',
+                            name: usuarioAsignador.nombre,
+                            fotoPerfil: usuarioAsignador.fotoPerfil,
                         },
                         unassignedTo: {
                             id: userIdDesasignado,
-                            name: usuarioDesasignado?.usuario || 'Usuario desconocido',
+                            name: usuarioDesasignado?.usuario || 'Usuario',
+                            fotoPerfil: usuarioDesasignado?.fotoPerfil || null,
                         },
                         issueTitle: recursoActualizado?.nombre || 'Incidencia',
                         timestamp: new Date().toISOString(),
