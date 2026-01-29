@@ -13,12 +13,15 @@ import {
     UseInterceptors,
     UploadedFile,
     BadRequestException,
+    Inject,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
 import { RequestInfoHelper } from '../../shared/helpers/request-info.helper';
+import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
+import { ACC_REPOSITORY, type IAccRepository } from '../../domain/repositories/acc.repository.interface';
 
 // Use Cases
 import { GetProyectosUseCase } from '../../application/use-cases/acc/projects/get-proyectos.use-case';
@@ -30,6 +33,8 @@ import { CrearProyectoUseCase } from '../../application/use-cases/acc/projects/c
 import { ClonarProyectoUseCase } from '../../application/use-cases/acc/projects/clonar-proyecto.use-case';
 import { ActualizarProyectoUseCase } from '../../application/use-cases/acc/projects/actualizar-proyecto.use-case';
 import { SubirImagenProyectoUseCase } from '../../application/use-cases/acc/projects/subir-imagen-proyecto.use-case';
+import { ActivarServicioProyectoUseCase } from '../../application/use-cases/acc/projects/activar-servicio-proyecto.use-case';
+import { DesactivarServicioProyectoUseCase } from '../../application/use-cases/acc/projects/desactivar-servicio-proyecto.use-case';
 
 // DTOs
 import { GetProyectosDto } from '../../application/dtos/acc/projects/get-proyectos.dto';
@@ -41,6 +46,7 @@ import { CrearProyectoDto } from '../../application/dtos/acc/projects/crear-proy
 import { ClonarProyectoDto } from '../../application/dtos/acc/projects/clonar-proyecto.dto';
 import { ActualizarProyectoDto } from '../../application/dtos/acc/projects/actualizar-proyecto.dto';
 import { SubirImagenProyectoDto } from '../../application/dtos/acc/projects/subir-imagen-proyecto.dto';
+import { ActivarServicioProyectoDto } from '../../application/dtos/acc/projects/activar-servicio-proyecto.dto';
 
 @Controller('acc/projects')
 export class AccProjectsController {
@@ -54,6 +60,11 @@ export class AccProjectsController {
         private readonly clonarProyectoUseCase: ClonarProyectoUseCase,
         private readonly actualizarProyectoUseCase: ActualizarProyectoUseCase,
         private readonly subirImagenProyectoUseCase: SubirImagenProyectoUseCase,
+        private readonly activarServicioProyectoUseCase: ActivarServicioProyectoUseCase,
+        private readonly desactivarServicioProyectoUseCase: DesactivarServicioProyectoUseCase,
+        private readonly autodeskApiService: AutodeskApiService,
+        @Inject(ACC_REPOSITORY)
+        private readonly accRepository: IAccRepository,
     ) { }
 
     /**
@@ -355,5 +366,191 @@ export class AccProjectsController {
             resultado,
             'Imagen del proyecto subida exitosamente',
         );
+    }
+
+    /**
+     * POST - Activar un servicio en un proyecto (ej: Docs, Cost, etc.)
+     * POST /acc/projects/:projectId/activar-servicio
+     */
+    @Post(':projectId/activar-servicio')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async activarServicioProyecto(
+        @Param('projectId') projectId: string,
+        @Body() dto: ActivarServicioProyectoDto,
+        @Req() request: Request,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.activarServicioProyectoUseCase.execute(
+            projectId,
+            dto,
+            internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
+
+        return ApiResponseDto.success(
+            resultado,
+            resultado.message || 'Servicio activado exitosamente',
+        );
+    }
+
+    /**
+     * POST - Desactivar un servicio en un proyecto para un usuario
+     * POST /acc/projects/:projectId/desactivar-servicio
+     */
+    @Post(':projectId/desactivar-servicio')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async desactivarServicioProyecto(
+        @Param('projectId') projectId: string,
+        @Body() dto: { email: string; service: string; region?: string },
+        @Req() request: Request,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        if (!dto.email || !dto.service) {
+            throw new BadRequestException('El email y el servicio son requeridos');
+        }
+
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+        const requestInfo = RequestInfoHelper.extract(request);
+        const userRole = user?.roles && Array.isArray(user.roles) && user.roles.length > 0
+            ? user.roles[0]?.nombre || user.roles[0]?.name || null
+            : null;
+
+        const resultado = await this.desactivarServicioProyectoUseCase.execute(
+            projectId,
+            dto,
+            internalUserId,
+            requestInfo.ipAddress,
+            requestInfo.userAgent,
+            userRole,
+        );
+
+        return ApiResponseDto.success(
+            resultado,
+            resultado.message || 'Servicio desactivado exitosamente',
+        );
+    }
+
+    /**
+     * GET - Obtener los servicios/productos activos del usuario de ACC en el proyecto
+     * GET /acc/projects/:projectId/mis-servicios
+     * Devuelve los productos a los que el usuario de ACC tiene acceso en el proyecto
+     */
+    @Get(':projectId/mis-servicios')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async obtenerMisServiciosProyecto(
+        @Param('projectId') projectId: string,
+        @Req() request: Request,
+    ) {
+        if (!projectId) {
+            throw new BadRequestException('El ID del proyecto es requerido');
+        }
+
+        const user = (request as any).user;
+        const internalUserId = user?.sub || user?.id;
+
+        if (!internalUserId) {
+            throw new BadRequestException('Usuario no autenticado');
+        }
+
+        try {
+            // Obtener el token 3-legged del usuario
+            const token = await this.accRepository.obtenerToken3LeggedPorUsuario(internalUserId);
+
+            if (!token) {
+                return ApiResponseDto.success(
+                    { products: [], esMiembro: false, mensaje: 'No hay token de ACC' },
+                    'No se encontró token de ACC. El usuario debe autorizar la aplicación.',
+                );
+            }
+
+            // Verificar si el token está expirado
+            if (this.autodeskApiService.esTokenExpirado(token.expiraEn)) {
+                return ApiResponseDto.success(
+                    { products: [], esMiembro: false, mensaje: 'Token expirado' },
+                    'El token de ACC ha expirado.',
+                );
+            }
+
+            // Obtener el perfil del usuario de ACC para saber su email
+            const perfil = await this.autodeskApiService.obtenerPerfilUsuarioAcc(token.tokenAcceso);
+            const emailUsuario = perfil?.emailId;
+
+            if (!emailUsuario) {
+                return ApiResponseDto.success(
+                    { products: [], esMiembro: false, mensaje: 'No se pudo obtener email' },
+                    'No se pudo obtener el email del usuario de ACC.',
+                );
+            }
+
+            // Buscar al usuario en el proyecto por email
+            const usuariosResponse = await this.autodeskApiService.obtenerUsuariosProyecto(
+                token.tokenAcceso,
+                projectId,
+                { 'filter[email]': emailUsuario, limit: '1' },
+            );
+
+            const usuarios = usuariosResponse?.data?.results || usuariosResponse?.results || [];
+            const usuarioEnProyecto = usuarios.find((u: any) =>
+                u.email?.toLowerCase() === emailUsuario.toLowerCase()
+            );
+
+            if (!usuarioEnProyecto) {
+                return ApiResponseDto.success(
+                    {
+                        products: [],
+                        esMiembro: false,
+                        email: emailUsuario,
+                        mensaje: 'Usuario no es miembro del proyecto'
+                    },
+                    'El usuario de ACC no es miembro de este proyecto.',
+                );
+            }
+
+            // El usuario es miembro, devolver sus productos activos
+            const productosUsuario = usuarioEnProyecto.products || [];
+
+            // Filtrar solo los productos con acceso (administrator o user)
+            const productosActivos = productosUsuario
+                .filter((p: any) => p.access === 'administrator' || p.access === 'user')
+                .map((p: any) => ({
+                    key: p.key,
+                    access: p.access,
+                }));
+
+            return ApiResponseDto.success(
+                {
+                    products: productosActivos,
+                    esMiembro: true,
+                    email: emailUsuario,
+                    usuarioId: usuarioEnProyecto.id,
+                    nombre: `${usuarioEnProyecto.firstName || ''} ${usuarioEnProyecto.lastName || ''}`.trim(),
+                },
+                'Servicios del usuario obtenidos exitosamente.',
+            );
+        } catch (error: any) {
+            return ApiResponseDto.error(
+                `Error al obtener servicios del usuario: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 }

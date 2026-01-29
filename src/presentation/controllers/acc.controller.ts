@@ -10,6 +10,7 @@ import {
     Query,
     UnauthorizedException,
     UseGuards,
+    Inject,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
@@ -25,6 +26,8 @@ import { GenerarUrlAutorizacionDto } from '../../application/dtos/acc/generar-ur
 import { CallbackAutorizacionDto } from '../../application/dtos/acc/callback-autorizacion.dto';
 import { ValidarExpiracionDto } from '../../application/dtos/acc/validar-expiracion.dto';
 import { ApiResponseDto } from '../../shared/dtos/api-response.dto';
+import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
+import { ACC_REPOSITORY, type IAccRepository } from '../../domain/repositories/acc.repository.interface';
 
 @Controller('acc')
 export class AccController {
@@ -36,6 +39,9 @@ export class AccController {
         private readonly revocarTokenUseCase: RevocarTokenUseCase,
         private readonly callbackAutorizacionUseCase: CallbackAutorizacionUseCase,
         private readonly validarExpiracionUseCase: ValidarExpiracionUseCase,
+        private readonly autodeskApiService: AutodeskApiService,
+        @Inject(ACC_REPOSITORY)
+        private readonly accRepository: IAccRepository,
     ) { }
 
     // ==================== 2-LEGGED TOKEN (App-Only) ====================
@@ -183,5 +189,61 @@ export class AccController {
             resultado,
             'Token 3-legged obtenido y guardado exitosamente',
         );
+    }
+
+    /**
+     * Obtener perfil del usuario de ACC autenticado
+     * GET /acc/perfil-usuario
+     */
+    @Get('perfil-usuario')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async obtenerPerfilUsuarioAcc(@Req() request: Request) {
+        const user = (request as any).user;
+        const userId = user?.sub;
+
+        if (!userId) {
+            throw new UnauthorizedException('Usuario no autenticado');
+        }
+
+        // Obtener el token 3-legged del usuario
+        const token = await this.accRepository.obtenerToken3LeggedPorUsuario(userId);
+
+        if (!token) {
+            return ApiResponseDto.error(
+                'No se encontró token de ACC. Debe autorizar la aplicación primero.',
+                HttpStatus.NOT_FOUND,
+            );
+        }
+
+        // Verificar si el token está expirado
+        if (this.autodeskApiService.esTokenExpirado(token.expiraEn)) {
+            return ApiResponseDto.error(
+                'El token de ACC ha expirado. Debe refrescar o re-autorizar.',
+                HttpStatus.UNAUTHORIZED,
+            );
+        }
+
+        try {
+            // Obtener el perfil del usuario de ACC
+            const perfil = await this.autodeskApiService.obtenerPerfilUsuarioAcc(token.tokenAcceso);
+
+            return ApiResponseDto.success(
+                {
+                    userId: perfil.userId,
+                    email: perfil.emailId,
+                    userName: perfil.userName,
+                    firstName: perfil.firstName,
+                    lastName: perfil.lastName,
+                    emailVerified: perfil.emailVerified,
+                },
+                'Perfil del usuario de ACC obtenido exitosamente',
+            );
+        } catch (error: any) {
+            return ApiResponseDto.error(
+                `Error al obtener perfil de ACC: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 }

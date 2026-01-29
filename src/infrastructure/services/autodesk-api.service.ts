@@ -197,6 +197,42 @@ export class AutodeskApiService {
         return expirationDate.getTime() - now.getTime() < bufferTime;
     }
 
+    /**
+     * Obtiene el perfil del usuario de ACC autenticado (email, nombre, etc.)
+     * Usa el endpoint /userprofile/v1/users/@me
+     */
+    async obtenerPerfilUsuarioAcc(accessToken: string): Promise<{
+        userId: string;
+        userName: string;
+        emailId: string;
+        firstName: string;
+        lastName: string;
+        emailVerified: boolean;
+        profileImages?: any;
+    }> {
+        try {
+            if (!accessToken) {
+                throw new Error('El token de acceso es requerido');
+            }
+
+            const baseUrl = this.configService.get<string>('AUTODESK_API_BASE_URL') || 'https://developer.api.autodesk.com';
+            const url = `${baseUrl}/userprofile/v1/users/@me`;
+
+            const response = await this.httpClient.get<any>(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error: any) {
+            throw new Error(
+                `Error al obtener perfil del usuario ACC: ${error.response?.data?.message || error.response?.data?.error || error.message}`,
+            );
+        }
+    }
+
     // ==================== DATA MANAGEMENT API ====================
 
     /**

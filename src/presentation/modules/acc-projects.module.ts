@@ -11,6 +11,8 @@ import { CrearProyectoUseCase } from '../../application/use-cases/acc/projects/c
 import { ClonarProyectoUseCase } from '../../application/use-cases/acc/projects/clonar-proyecto.use-case';
 import { ActualizarProyectoUseCase } from '../../application/use-cases/acc/projects/actualizar-proyecto.use-case';
 import { SubirImagenProyectoUseCase } from '../../application/use-cases/acc/projects/subir-imagen-proyecto.use-case';
+import { ActivarServicioProyectoUseCase } from '../../application/use-cases/acc/projects/activar-servicio-proyecto.use-case';
+import { DesactivarServicioProyectoUseCase } from '../../application/use-cases/acc/projects/desactivar-servicio-proyecto.use-case';
 
 // Services
 import { AutodeskApiService } from '../../infrastructure/services/autodesk-api.service';
@@ -44,6 +46,8 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
         ClonarProyectoUseCase,
         ActualizarProyectoUseCase,
         SubirImagenProyectoUseCase,
+        ActivarServicioProyectoUseCase,
+        DesactivarServicioProyectoUseCase,
 
         // Services
         AutodeskApiService,
